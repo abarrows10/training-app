@@ -1,6 +1,18 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc,
+  query,
+  onSnapshot,
+  setDoc
+} from 'firebase/firestore';
+import { db } from '@/firebase/config';
 
 interface Exercise {
   id: number;
@@ -62,51 +74,49 @@ interface ExerciseProgress {
   workoutId: number;
   scheduledWorkoutId: number;
   date: string;
-  timestamp: string;  // New: exact time of completion
+  timestamp: string;
   completed: boolean;
-  category: string;   // New: copied from exercise
-  setsCompleted: number; // New: actual sets completed
-  repsCompleted: number; // New: actual reps completed
-  targetSets?: number;   // New: from workout plan
-  targetReps?: number;   // New: from workout plan
+  category: string;
+  setsCompleted: number;
+  repsCompleted: number;
+  targetSets?: number;
+  targetReps?: number;
 }
 
 interface StoreContextType {
   athletes: Athlete[];
-  addAthlete: (athlete: Omit<Athlete, 'id'>) => void;
-  updateAthlete: (id: number, athlete: Omit<Athlete, 'id'>) => void;
-  removeAthlete: (id: number) => void;
+  addAthlete: (athlete: Omit<Athlete, 'id'>) => Promise<void>;
+  updateAthlete: (id: number, athlete: Omit<Athlete, 'id'>) => Promise<void>;
+  removeAthlete: (id: number) => Promise<void>;
   
   exercises: Exercise[];
-  addExercise: (exercise: Omit<Exercise, 'id'>) => void;
-  updateExercise: (id: number, exercise: Omit<Exercise, 'id'>) => void;
-  removeExercise: (id: number) => void;
+  addExercise: (exercise: Omit<Exercise, 'id'>) => Promise<void>;
+  updateExercise: (id: number, exercise: Omit<Exercise, 'id'>) => Promise<void>;
+  removeExercise: (id: number) => Promise<void>;
   
   sequences: DrillSequence[];
-  addSequence: (sequence: Omit<DrillSequence, 'id'>) => void;
-  removeSequence: (id: number) => void;
+  addSequence: (sequence: Omit<DrillSequence, 'id'>) => Promise<void>;
+  removeSequence: (id: number) => Promise<void>;
   
   workouts: Workout[];
-  addWorkout: (workout: Omit<Workout, 'id'>) => void;
-  updateWorkout: (id: number, workout: Omit<Workout, 'id'>) => void;
-  removeWorkout: (id: number) => void;
+  addWorkout: (workout: Omit<Workout, 'id'>) => Promise<void>;
+  updateWorkout: (id: number, workout: Omit<Workout, 'id'>) => Promise<void>;
+  removeWorkout: (id: number) => Promise<void>;
   
   scheduledWorkouts: ScheduledWorkout[];
-  scheduleWorkout: (workout: Omit<ScheduledWorkout, 'id'>) => void;
-  removeScheduledWorkout: (id: number) => void;
+  scheduleWorkout: (workout: Omit<ScheduledWorkout, 'id'>) => Promise<void>;
+  removeScheduledWorkout: (id: number) => Promise<void>;
 
   videos: Video[];
-  addVideo: (video: Omit<Video, 'id'>) => number;
-  updateVideoStatus: (id: number, status: Video['status']) => void;
-  removeVideo: (id: number) => void;
-  linkVideoToExercise: (videoId: number, exerciseId: number) => void;
-  unlinkVideoFromExercise: (videoId: number, exerciseId: number) => void;
+  addVideo: (video: Omit<Video, 'id'>) => Promise<number>;
+  updateVideoStatus: (id: number, status: Video['status']) => Promise<void>;
+  removeVideo: (id: number) => Promise<void>;
+  linkVideoToExercise: (videoId: number, exerciseId: number) => Promise<void>;
+  unlinkVideoFromExercise: (videoId: number, exerciseId: number) => Promise<void>;
   
   progress: ExerciseProgress[];
-  updateProgress: (progress: Partial<ExerciseProgress>) => void;
+  updateProgress: (progress: Partial<ExerciseProgress>) => Promise<void>;
   getProgress: (exerciseId: number, scheduledWorkoutId: number) => ExerciseProgress | undefined;
-  
-  // New methods for progress statistics
   getAthleteStats: (athleteId: number, dateRange?: { start: string; end: string }) => {
     totalWorkouts: number;
     totalExercises: number;
@@ -118,235 +128,362 @@ interface StoreContextType {
 }
 
 const StoreContext = createContext<StoreContextType | null>(null);
-
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [sequences, setSequences] = useState<DrillSequence[]>([]);
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [scheduledWorkouts, setScheduledWorkouts] = useState<ScheduledWorkout[]>([]);
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [progress, setProgress] = useState<ExerciseProgress[]>([]);
-
-  useEffect(() => {
-    const savedAthletes = localStorage.getItem('athletes');
-    const savedExercises = localStorage.getItem('exercises');
-    const savedSequences = localStorage.getItem('sequences');
-    const savedWorkouts = localStorage.getItem('workouts');
-    const savedScheduledWorkouts = localStorage.getItem('scheduledWorkouts');
-    const savedVideos = localStorage.getItem('videos');
-    const savedProgress = localStorage.getItem('progress');
-
-    if (savedAthletes) setAthletes(JSON.parse(savedAthletes));
-    if (savedExercises) {
-      const parsedExercises = JSON.parse(savedExercises);
-      setExercises(parsedExercises.map((ex: Exercise) => ({
-        ...ex,
-        videoIds: ex.videoIds || []
-      })));
+    // State declarations with proper typing
+    const [athletes, setAthletes] = useState<Athlete[]>([]);
+    const [exercises, setExercises] = useState<Exercise[]>([]);
+    const [sequences, setSequences] = useState<DrillSequence[]>([]);
+    const [workouts, setWorkouts] = useState<Workout[]>([]);
+    const [scheduledWorkouts, setScheduledWorkouts] = useState<ScheduledWorkout[]>([]);
+    const [videos, setVideos] = useState<Video[]>([]);
+    const [progress, setProgress] = useState<ExerciseProgress[]>([]);
+  
+    // Firestore Listeners
+    useEffect(() => {
+      console.log('Setting up Firestore listeners');
+  
+      // Exercises listener
+      const unsubExercises = onSnapshot(
+        collection(db, 'exercises'),
+        (snapshot) => {
+          console.log('Received exercises update');
+          const exerciseData = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: Number(doc.id)
+          })) as Exercise[];
+          setExercises(exerciseData);
+        },
+        (error) => console.error('Exercises listener error:', error)
+      );
+  
+      // Athletes listener
+      const unsubAthletes = onSnapshot(
+        collection(db, 'athletes'),
+        (snapshot) => {
+          const athleteData = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: Number(doc.id)
+          })) as Athlete[];
+          setAthletes(athleteData);
+        }
+      );
+  
+      // Sequences listener
+      const unsubSequences = onSnapshot(
+        collection(db, 'sequences'),
+        (snapshot) => {
+          const sequenceData = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: Number(doc.id)
+          })) as DrillSequence[];
+          setSequences(sequenceData);
+        }
+      );
+  
+      // Workouts listener
+      const unsubWorkouts = onSnapshot(
+        collection(db, 'workouts'),
+        (snapshot) => {
+          const workoutData = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: Number(doc.id)
+          })) as Workout[];
+          setWorkouts(workoutData);
+        }
+      );
+  
+      // Scheduled Workouts listener
+      const unsubScheduled = onSnapshot(
+        collection(db, 'scheduledWorkouts'),
+        (snapshot) => {
+          const scheduledData = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: Number(doc.id)
+          })) as ScheduledWorkout[];
+          setScheduledWorkouts(scheduledData);
+        }
+      );
+  
+      // Videos listener
+      const unsubVideos = onSnapshot(
+        collection(db, 'videos'),
+        (snapshot) => {
+          const videoData = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: Number(doc.id)
+          })) as Video[];
+          setVideos(videoData);
+        }
+      );
+  
+      // Progress listener
+      const unsubProgress = onSnapshot(
+        collection(db, 'progress'),
+        (snapshot) => {
+          const progressData = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: Number(doc.id)
+        })) as unknown as ExerciseProgress[];
+          setProgress(progressData);
+        }
+      );
+  
+      // Cleanup function
+      return () => {
+        unsubExercises();
+        unsubAthletes();
+        unsubSequences();
+        unsubWorkouts();
+        unsubScheduled();
+        unsubVideos();
+        unsubProgress();
+      };
+    }, []); // Empty dependency array means this runs once on mount
+    // Exercise functions
+  const addExercise = async (exercise: Omit<Exercise, 'id'>) => {
+    try {
+      console.log('Adding exercise:', exercise);
+      const docRef = await addDoc(collection(db, 'exercises'), {
+        ...exercise,
+        videoIds: exercise.videoIds || []
+      });
+      console.log('Exercise added with ID:', docRef.id);
+    } catch (error) {
+      console.error('Error adding exercise:', error);
+      throw error;
     }
-    if (savedSequences) setSequences(JSON.parse(savedSequences));
-    if (savedWorkouts) setWorkouts(JSON.parse(savedWorkouts));
-    if (savedScheduledWorkouts) setScheduledWorkouts(JSON.parse(savedScheduledWorkouts));
-    if (savedVideos) setVideos(JSON.parse(savedVideos));
-    if (savedProgress) setProgress(JSON.parse(savedProgress));
-  }, []);
+  };
 
-  useEffect(() => {
-    localStorage.setItem('athletes', JSON.stringify(athletes));
-    localStorage.setItem('exercises', JSON.stringify(exercises));
-    localStorage.setItem('sequences', JSON.stringify(sequences));
-    localStorage.setItem('workouts', JSON.stringify(workouts));
-    localStorage.setItem('scheduledWorkouts', JSON.stringify(scheduledWorkouts));
-    localStorage.setItem('videos', JSON.stringify(videos));
-    localStorage.setItem('progress', JSON.stringify(progress));
-  }, [athletes, exercises, sequences, workouts, scheduledWorkouts, videos, progress]);
+  const updateExercise = async (id: number, exercise: Omit<Exercise, 'id'>) => {
+    try {
+      await updateDoc(doc(db, 'exercises', id.toString()), {
+        ...exercise,
+        videoIds: exercise.videoIds || []
+      });
+    } catch (error) {
+      console.error('Error updating exercise:', error);
+      throw error;
+    }
+  };
+
+  const removeExercise = async (id: number) => {
+    try {
+      await deleteDoc(doc(db, 'exercises', id.toString()));
+    } catch (error) {
+      console.error('Error removing exercise:', error);
+      throw error;
+    }
+  };
 
   // Athlete functions
-  const addAthlete = (athlete: Omit<Athlete, 'id'>) => {
-    const newAthlete = {
-      ...athlete,
-      id: Date.now(),
-    };
-    setAthletes(prev => [...prev, newAthlete]);
+  const addAthlete = async (athlete: Omit<Athlete, 'id'>) => {
+    try {
+      await addDoc(collection(db, 'athletes'), athlete);
+    } catch (error) {
+      console.error('Error adding athlete:', error);
+      throw error;
+    }
   };
 
-  const updateAthlete = (id: number, athlete: Omit<Athlete, 'id'>) => {
-    setAthletes(prev => prev.map(a => a.id === id ? { ...athlete, id } : a));
+  const updateAthlete = async (id: number, athlete: Omit<Athlete, 'id'>) => {
+    try {
+      await updateDoc(doc(db, 'athletes', id.toString()), athlete);
+    } catch (error) {
+      console.error('Error updating athlete:', error);
+      throw error;
+    }
   };
 
-  const removeAthlete = (id: number) => {
-    setAthletes(prev => prev.filter(athlete => athlete.id !== id));
-    setScheduledWorkouts(prev => prev.filter(sw => sw.athleteId !== id));
-  };
-
-  // Exercise functions
-  const addExercise = (exercise: Omit<Exercise, 'id'>) => {
-    const newExercise = {
-      ...exercise,
-      id: Date.now(),
-      videoIds: exercise.videoIds || [],
-    };
-    setExercises(prev => [...prev, newExercise]);
-  };
-
-  const updateExercise = (id: number, exercise: Omit<Exercise, 'id'>) => {
-    setExercises(prev => prev.map(e => e.id === id ? {
-      ...exercise,
-      id,
-      videoIds: exercise.videoIds || []
-    } : e));
-  };
-
-  const removeExercise = (id: number) => {
-    setExercises(prev => prev.filter(exercise => exercise.id !== id));
+  const removeAthlete = async (id: number) => {
+    try {
+      await deleteDoc(doc(db, 'athletes', id.toString()));
+    } catch (error) {
+      console.error('Error removing athlete:', error);
+      throw error;
+    }
   };
 
   // Sequence functions
-  const addSequence = (sequence: Omit<DrillSequence, 'id'>) => {
-    const newSequence = {
-      ...sequence,
-      id: Date.now(),
-    };
-    setSequences(prev => [...prev, newSequence]);
+  const addSequence = async (sequence: Omit<DrillSequence, 'id'>) => {
+    try {
+      await addDoc(collection(db, 'sequences'), sequence);
+    } catch (error) {
+      console.error('Error adding sequence:', error);
+      throw error;
+    }
   };
 
-  const removeSequence = (id: number) => {
-    setSequences(prev => prev.filter(sequence => sequence.id !== id));
+  const removeSequence = async (id: number) => {
+    try {
+      await deleteDoc(doc(db, 'sequences', id.toString()));
+    } catch (error) {
+      console.error('Error removing sequence:', error);
+      throw error;
+    }
   };
 
   // Workout functions
-  const addWorkout = (workout: Omit<Workout, 'id'>) => {
-    const newWorkout = {
-      ...workout,
-      id: Date.now(),
-    };
-    setWorkouts(prev => [...prev, newWorkout]);
+  const addWorkout = async (workout: Omit<Workout, 'id'>) => {
+    try {
+      await addDoc(collection(db, 'workouts'), workout);
+    } catch (error) {
+      console.error('Error adding workout:', error);
+      throw error;
+    }
   };
 
-  const updateWorkout = (id: number, workout: Omit<Workout, 'id'>) => {
-    setWorkouts(prev => prev.map(w => w.id === id ? { ...workout, id } : w));
+  const updateWorkout = async (id: number, workout: Omit<Workout, 'id'>) => {
+    try {
+      await updateDoc(doc(db, 'workouts', id.toString()), workout);
+    } catch (error) {
+      console.error('Error updating workout:', error);
+      throw error;
+    }
   };
 
-  const removeWorkout = (id: number) => {
-    setWorkouts(prev => prev.filter(workout => workout.id !== id));
-    setScheduledWorkouts(prev => prev.filter(sw => sw.workoutId !== id));
+  const removeWorkout = async (id: number) => {
+    try {
+      await deleteDoc(doc(db, 'workouts', id.toString()));
+      // Also remove any scheduled instances of this workout
+      const scheduledToRemove = scheduledWorkouts.filter(sw => sw.workoutId === id);
+      for (const sw of scheduledToRemove) {
+        await removeScheduledWorkout(sw.id);
+      }
+    } catch (error) {
+      console.error('Error removing workout:', error);
+      throw error;
+    }
   };
 
-  // ScheduledWorkout functions
-  const scheduleWorkout = (workout: Omit<ScheduledWorkout, 'id'>) => {
-    const newScheduledWorkout = {
-      ...workout,
-      id: Date.now(),
-    };
-    setScheduledWorkouts(prev => [...prev, newScheduledWorkout]);
+  // Scheduled Workout functions
+  const scheduleWorkout = async (workout: Omit<ScheduledWorkout, 'id'>) => {
+    try {
+      await addDoc(collection(db, 'scheduledWorkouts'), workout);
+    } catch (error) {
+      console.error('Error scheduling workout:', error);
+      throw error;
+    }
   };
 
-  const removeScheduledWorkout = (id: number) => {
-    setScheduledWorkouts(prev => prev.filter(workout => workout.id !== id));
+  const removeScheduledWorkout = async (id: number) => {
+    try {
+      await deleteDoc(doc(db, 'scheduledWorkouts', id.toString()));
+    } catch (error) {
+      console.error('Error removing scheduled workout:', error);
+      throw error;
+    }
   };
 
   // Video functions
-  const addVideo = (video: Omit<Video, 'id'>) => {
-    const id = Date.now();
-    const newVideo = { ...video, id };
-    setVideos(prev => [...prev, newVideo]);
-    return id;
-  };
-
-  const updateVideoStatus = (id: number, status: Video['status']) => {
-    setVideos(prev => prev.map(video => 
-      video.id === id ? { ...video, status } : video
-    ));
-  };
-
-  const removeVideo = (id: number) => {
-    setExercises(prev => prev.map(exercise => ({
-      ...exercise,
-      videoIds: (exercise.videoIds || []).filter(videoId => videoId !== id)
-    })));
-    setVideos(prev => prev.filter(video => video.id !== id));
-  };
-
-  const linkVideoToExercise = (videoId: number, exerciseId: number) => {
-    setExercises(prev => prev.map(exercise => 
-      exercise.id === exerciseId
-        ? {
-            ...exercise,
-            videoIds: [...new Set([...(exercise.videoIds || []), videoId])]
-          }
-        : exercise
-    ));
-  };
-
-  const unlinkVideoFromExercise = (videoId: number, exerciseId: number) => {
-    setExercises(prev => prev.map(exercise =>
-      exercise.id === exerciseId
-        ? {
-            ...exercise,
-            videoIds: (exercise.videoIds || []).filter(id => id !== videoId)
-          }
-        : exercise
-    ));
-  };
-
-  // Progress functions
-  const updateProgress = (newProgress: Partial<ExerciseProgress>) => {
-    const exercise = exercises.find(e => e.id === newProgress.exerciseId);
-    const workout = workouts.find(w => w.id === newProgress.workoutId);
-    let workoutItem;
-    
-    if (workout) {
-      workoutItem = workout.items.find(item => {
-        if (item.type === 'drill') {
-          return item.itemId === newProgress.exerciseId;
-        } else if (item.type === 'sequence') {
-          const sequence = sequences.find(s => s.id === item.itemId);
-          return sequence?.drills.some(d => d.exerciseId === newProgress.exerciseId);
-        }
-        return false;
-      });
+  const addVideo = async (video: Omit<Video, 'id'>) => {
+    try {
+      const docRef = await addDoc(collection(db, 'videos'), video);
+      return Number(docRef.id);
+    } catch (error) {
+      console.error('Error adding video:', error);
+      throw error;
     }
-
-    const completeProgress: ExerciseProgress = {
-      exerciseId: newProgress.exerciseId!,
-      athleteId: newProgress.athleteId!,
-      workoutId: newProgress.workoutId!,
-      scheduledWorkoutId: newProgress.scheduledWorkoutId!,
-      date: newProgress.date || new Date().toISOString().split('T')[0],
-      timestamp: new Date().toISOString(),
-      completed: newProgress.completed || false,
-      category: exercise?.category || 'unknown',
-      setsCompleted: newProgress.setsCompleted || 0,
-      repsCompleted: newProgress.repsCompleted || 0,
-      targetSets: workoutItem?.sets,
-      targetReps: workoutItem?.reps
-    };
-
-    setProgress(prev => {
-      const index = prev.findIndex(p => 
-        p.exerciseId === completeProgress.exerciseId && 
-        p.scheduledWorkoutId === completeProgress.scheduledWorkoutId
-      );
-      
-      if (index !== -1) {
-        const updated = [...prev];
-        updated[index] = completeProgress;
-        return updated;
-      }
-      
-      return [...prev, completeProgress];
-    });
   };
 
-  const getProgress = (exerciseId: number, scheduledWorkoutId: number) => {
+  const updateVideoStatus = async (id: number, status: Video['status']) => {
+    try {
+      await updateDoc(doc(db, 'videos', id.toString()), { status });
+    } catch (error) {
+      console.error('Error updating video status:', error);
+      throw error;
+    }
+  };
+
+  const removeVideo = async (id: number) => {
+    try {
+      await deleteDoc(doc(db, 'videos', id.toString()));
+      // Update exercises that reference this video
+      const exercisesWithVideo = exercises.filter(e => e.videoIds.includes(id));
+      for (const exercise of exercisesWithVideo) {
+        const updatedVideoIds = exercise.videoIds.filter(vid => vid !== id);
+        await updateExercise(exercise.id, { ...exercise, videoIds: updatedVideoIds });
+      }
+    } catch (error) {
+      console.error('Error removing video:', error);
+      throw error;
+    }
+  };
+
+  const linkVideoToExercise = async (videoId: number, exerciseId: number) => {
+    try {
+      const exercise = exercises.find(e => e.id === exerciseId);
+      if (exercise) {
+        const updatedVideoIds = [...new Set([...(exercise.videoIds || []), videoId])];
+        await updateExercise(exerciseId, { ...exercise, videoIds: updatedVideoIds });
+      }
+    } catch (error) {
+      console.error('Error linking video:', error);
+      throw error;
+    }
+  };
+
+  const unlinkVideoFromExercise = async (videoId: number, exerciseId: number) => {
+    try {
+      const exercise = exercises.find(e => e.id === exerciseId);
+      if (exercise) {
+        const updatedVideoIds = exercise.videoIds.filter(id => id !== videoId);
+        await updateExercise(exerciseId, { ...exercise, videoIds: updatedVideoIds });
+      }
+    } catch (error) {
+      console.error('Error unlinking video:', error);
+      throw error;
+    }
+  };
+  // Progress tracking functions
+  const updateProgress = async (newProgress: Partial<ExerciseProgress>) => {
+    try {
+      const exercise = exercises.find(e => e.id === newProgress.exerciseId);
+      const workout = workouts.find(w => w.id === newProgress.workoutId);
+      let workoutItem;
+
+      if (workout) {
+        workoutItem = workout.items.find(item => {
+          if (item.type === 'drill') {
+            return item.itemId === newProgress.exerciseId;
+          } else if (item.type === 'sequence') {
+            const sequence = sequences.find(s => s.id === item.itemId);
+            return sequence?.drills.some(d => d.exerciseId === newProgress.exerciseId);
+          }
+          return false;
+        });
+      }
+
+      const completeProgress: ExerciseProgress = {
+        exerciseId: newProgress.exerciseId!,
+        athleteId: newProgress.athleteId!,
+        workoutId: newProgress.workoutId!,
+        scheduledWorkoutId: newProgress.scheduledWorkoutId!,
+        date: newProgress.date || new Date().toISOString().split('T')[0],
+        timestamp: new Date().toISOString(),
+        completed: newProgress.completed || false,
+        category: exercise?.category || 'unknown',
+        setsCompleted: newProgress.setsCompleted || 0,
+        repsCompleted: newProgress.repsCompleted || 0,
+        targetSets: workoutItem?.sets,
+        targetReps: workoutItem?.reps
+      };
+
+      const progressId = `${completeProgress.exerciseId}_${completeProgress.scheduledWorkoutId}`;
+      await setDoc(doc(db, 'progress', progressId), completeProgress);
+      console.log('Progress updated:', completeProgress);
+    } catch (error) {
+      console.error('Error updating progress:', error);
+      throw error;
+    }
+  };
+
+  const getProgress = (exerciseId: number, scheduledWorkoutId: number): ExerciseProgress | undefined => {
     return progress.find(p => 
       p.exerciseId === exerciseId && 
       p.scheduledWorkoutId === scheduledWorkoutId
     );
   };
 
-  // New statistics function
   const getAthleteStats = (athleteId: number, dateRange?: { start: string; end: string }) => {
     const athleteProgress = progress.filter(p => {
       const progressDate = new Date(p.date);
@@ -360,7 +497,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return p.athleteId === athleteId;
     });
 
-    const stats = {
+    return {
       totalWorkouts: new Set(athleteProgress.map(p => p.workoutId)).size,
       totalExercises: athleteProgress.filter(p => p.completed).length,
       totalSets: athleteProgress.reduce((sum, p) => sum + (p.setsCompleted || 0), 0),
@@ -373,8 +510,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         .filter(p => p.completed)
         .map(p => p.date))]
     };
-
-    return stats;
   };
 
   return (
