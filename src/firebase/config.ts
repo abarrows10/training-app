@@ -1,21 +1,38 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { initializeApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCaErySMGDDWI0ioc-2IEKItyEs3J6w0zo",
-  authDomain: "training-app-86d37.firebaseapp.com",
-  projectId: "training-app-86d37",
-  storageBucket: "training-app-86d37.firebasestorage.app",
-  messagingSenderId: "659253984337",
-  appId: "1:659253984337:web:4be43706fcf31068884c70",
-  measurementId: "G-W1PPRXK21C"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+console.log('Firebase Config:', firebaseConfig);
 
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+let storage: FirebaseStorage;
+
+try {
+  app = initializeApp(firebaseConfig);
+  console.log('Firebase initialized successfully');
+  
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+
+  console.log('Firebase services initialized');
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+  throw error;
+}
+
+export { auth, db, storage };
 export default app;
