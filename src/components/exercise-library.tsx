@@ -71,8 +71,9 @@ const ExerciseLibrary = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      console.log('Deleting exercise:', id);
-      await removeExercise(id);
+      const numericId = Number(id);
+      console.log('Deleting exercise:', numericId);
+      await removeExercise(numericId);
       console.log('Exercise deleted successfully');
     } catch (error) {
       console.error('Error deleting exercise:', error);
