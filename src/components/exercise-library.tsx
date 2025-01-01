@@ -69,6 +69,16 @@ const ExerciseLibrary = () => {
     setEditingId(null);
   };
 
+  const handleDelete = async (id: number) => {
+    try {
+      console.log('Deleting exercise:', id);
+      await removeExercise(id);
+      console.log('Exercise deleted successfully');
+    } catch (error) {
+      console.error('Error deleting exercise:', error);
+    }
+  };
+
   const filteredExercises = exercises.filter(exercise => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || exercise.category === selectedCategory;
@@ -261,11 +271,11 @@ const ExerciseLibrary = () => {
                           <Edit className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => removeExercise(exercise.id)}
-                          className="text-red-500 hover:text-red-600 transition-colors"
+                            onClick={() => handleDelete(exercise.id)}
+                            className="text-red-500 hover:text-red-600"
                         >
-                          <Trash className="w-4 h-4" />
-                        </button>
+                            <Trash className="w-4 h-4" />
+                            </button>
                       </div>
                     </div>
                     <p className="text-sm text-gray-300 mt-2">{exercise.description}</p>
