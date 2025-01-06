@@ -90,6 +90,7 @@ interface StoreContextType {
   removeAthlete: (id: number) => Promise<void>;
   
   exercises: Exercise[];
+  setExercises: (exercises: Exercise[]) => void;
   addExercise: (exercise: Omit<Exercise, 'id'>) => Promise<void>;
   updateExercise: (id: number, exercise: Omit<Exercise, 'id'>) => Promise<void>;
   removeExercise: (id: number) => Promise<void>;
@@ -519,6 +520,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       updateAthlete,
       removeAthlete,
       exercises,
+      setExercises,
       addExercise,
       updateExercise,
       removeExercise,
