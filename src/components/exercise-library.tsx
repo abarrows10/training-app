@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Plus, Video, Trash, Edit, X, Check } from 'lucide-react';
 import { useStore } from '@/store';
 import VideoSelector from '../components/Video-Selector';
@@ -40,6 +40,10 @@ const ExerciseLibrary = () => {
     description: '',
     videoIds: []
   });
+
+  useEffect(() => {
+    console.log('Loaded exercises:', exercises);
+  }, [exercises]);
 
   const categories = ['All', 'Hitting', 'Fielding', 'Throwing', 'Pitching', 'Band Exercises', 'Speed & Agility'];
 
@@ -81,16 +85,21 @@ const ExerciseLibrary = () => {
 
   const handleDelete = async (id: number) => {
     try {
+      console.log('Type of id:', typeof id);
+      console.log('Original id:', id);
       const numericId = Number(id);
-      console.log('Deleting exercise:', numericId);
+      console.log('Converted numericId:', numericId);
       await removeExercise(numericId);
       
       const exercisesRef = collection(db, 'exercises');
       const snapshot = await getDocs(exercisesRef);
-      const exerciseData = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: Number(doc.id)
-      })) as Exercise[];
+      const exerciseData = snapshot.docs.map(doc => {
+        console.log('Doc ID:', doc.id, 'Doc data:', doc.data());
+        return {
+          ...doc.data(),
+          id: Number(doc.id)
+        };
+      }) as Exercise[];
       setExercises(exerciseData);
       
       console.log('Exercise deleted successfully');
