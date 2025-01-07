@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { Search, Plus, Video, Trash, Edit, X, Check } from 'lucide-react';
 import { useStore } from '@/store';
 import VideoSelector from '../components/Video-Selector';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 
 interface NewExercise {
   name: string;
@@ -12,8 +14,16 @@ interface NewExercise {
   videoIds: number[];
 }
 
+interface Exercise {
+    id: number;
+    name: string;
+    category: string;
+    description: string;
+    videoIds: number[];
+  }
+  
 const ExerciseLibrary = () => {
-  const { exercises, addExercise, removeExercise, updateExercise, linkVideoToExercise, unlinkVideoFromExercise } = useStore();
+    const { exercises, addExercise, removeExercise, updateExercise, linkVideoToExercise, unlinkVideoFromExercise, setExercises } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -74,6 +84,15 @@ const ExerciseLibrary = () => {
       const numericId = Number(id);
       console.log('Deleting exercise:', numericId);
       await removeExercise(numericId);
+      
+      const exercisesRef = collection(db, 'exercises');
+      const snapshot = await getDocs(exercisesRef);
+      const exerciseData = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: Number(doc.id)
+      })) as Exercise[];
+      setExercises(exerciseData);
+      
       console.log('Exercise deleted successfully');
     } catch (error) {
       console.error('Error deleting exercise:', error);
@@ -272,9 +291,12 @@ const ExerciseLibrary = () => {
                           <Edit className="w-4 h-4" />
                         </button>
                         <button 
-                            onClick={() => handleDelete(exercise.id)}
+                            onClick={() => {
+                                console.log('Delete clicked, exercise id:', exercise.id);
+                                handleDelete(exercise.id);
+                            }}
                             className="text-red-500 hover:text-red-600"
-                        >
+                            >
                             <Trash className="w-4 h-4" />
                             </button>
                       </div>
