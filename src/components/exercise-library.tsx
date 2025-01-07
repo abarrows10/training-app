@@ -15,15 +15,15 @@ interface NewExercise {
 }
 
 interface Exercise {
-    id: number;
-    name: string;
-    category: string;
-    description: string;
-    videoIds: number[];
-  }
-  
+  id: number;
+  name: string;
+  category: string;
+  description: string;
+  videoIds: number[];
+}
+
 const ExerciseLibrary = () => {
-    const { exercises, addExercise, removeExercise, updateExercise, linkVideoToExercise, unlinkVideoFromExercise, setExercises } = useStore();
+  const { exercises, addExercise, removeExercise, updateExercise, linkVideoToExercise, unlinkVideoFromExercise, setExercises } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -109,6 +109,7 @@ const ExerciseLibrary = () => {
   };
 
   const filteredExercises = exercises.filter(exercise => {
+    console.log('Exercise being filtered:', exercise);
     const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || exercise.category === selectedCategory;
     return matchesSearch && matchesCategory;
@@ -232,101 +233,104 @@ const ExerciseLibrary = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredExercises.map(exercise => (
-            <div key={exercise.id} className="border border-[#3A3B3C] rounded-lg overflow-hidden bg-[#18191A]">
-              <div className="p-4">
-                {editingId === exercise.id ? (
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-                    />
-                    <select
-                      value={editForm.category}
-                      onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-                    >
-                      {categories.filter(cat => cat !== 'All').map(category => (
-                        <option key={category} value={category} className="bg-[#242526] text-white">{category}</option>
-                      ))}
-                    </select>
-                    <textarea
-                      value={editForm.description}
-                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-                      rows={3}
-                    />
-                    <VideoSelector
-                      exerciseId={exercise.id}
-                      selectedVideoIds={editForm.videoIds}
-                      onVideoSelect={(videoId) => {
-                        setEditForm(prev => ({
-                          ...prev,
-                          videoIds: prev.videoIds.includes(videoId)
-                            ? prev.videoIds.filter(id => id !== videoId)
-                            : [...prev.videoIds, videoId]
-                        }));
-                      }}
-                    />
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={cancelEdit}
-                        className="text-gray-400 hover:text-white transition-colors"
+          {filteredExercises.map((exercise) => {
+            console.log('Exercise in render:', exercise);
+            return (
+              <div key={exercise.id} className="border border-[#3A3B3C] rounded-lg overflow-hidden bg-[#18191A]">
+                <div className="p-4">
+                  {editingId === exercise.id ? (
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                      />
+                      <select
+                        value={editForm.category}
+                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
                       >
-                        <X className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => saveEdit(exercise.id)}
-                        className="text-[#00A3E0] hover:text-[#0077A3] transition-colors"
-                      >
-                        <Check className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-white">{exercise.name}</h3>
-                        <span className="text-sm text-gray-300">{exercise.category}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => startEdit(exercise)}
+                        {categories.filter(cat => cat !== 'All').map(category => (
+                          <option key={category} value={category} className="bg-[#242526] text-white">{category}</option>
+                        ))}
+                      </select>
+                      <textarea
+                        value={editForm.description}
+                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                        rows={3}
+                      />
+                      <VideoSelector
+                        exerciseId={exercise.id}
+                        selectedVideoIds={editForm.videoIds}
+                        onVideoSelect={(videoId) => {
+                          setEditForm(prev => ({
+                            ...prev,
+                            videoIds: prev.videoIds.includes(videoId)
+                              ? prev.videoIds.filter(id => id !== videoId)
+                              : [...prev.videoIds, videoId]
+                          }));
+                        }}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={cancelEdit}
+                          className="text-gray-400 hover:text-white transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => saveEdit(exercise.id)}
                           className="text-[#00A3E0] hover:text-[#0077A3] transition-colors"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Check className="w-4 h-4" />
                         </button>
-                        <button 
-                            onClick={() => {
-                                console.log('Delete clicked, exercise id:', exercise.id);
-                                handleDelete(exercise.id);
-                            }}
-                            className="text-red-500 hover:text-red-600"
-                            >
-                            <Trash className="w-4 h-4" />
-                            </button>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-300 mt-2">{exercise.description}</p>
-                    {exercise.videoIds && exercise.videoIds.length > 0 && (
-                      <div className="mt-2 flex items-center text-[#00A3E0]">
-                        <Video className="w-4 h-4 mr-1" />
-                        <span className="text-sm">{exercise.videoIds.length} video(s)</span>
+                  ) : (
+                    <div>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-white">{exercise.name}</h3>
+                          <span className="text-sm text-gray-300">{exercise.category}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => startEdit(exercise)}
+                            className="text-[#00A3E0] hover:text-[#0077A3] transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              console.log('Delete clicked, exercise id:', exercise.id);
+                              handleDelete(exercise.id);
+                            }}
+                            className="text-red-500 hover:text-red-600 transition-colors"
+                          >
+                            <Trash className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                    )}
-                    <VideoSelector
-                      exerciseId={exercise.id}
-                      selectedVideoIds={exercise.videoIds}
-                      onVideoSelect={(videoId) => handleVideoSelect(videoId, exercise.id)}
-                    />
-                  </div>
-                )}
+                      <p className="text-sm text-gray-300 mt-2">{exercise.description}</p>
+                      {exercise.videoIds && exercise.videoIds.length > 0 && (
+                        <div className="mt-2 flex items-center text-[#00A3E0]">
+                          <Video className="w-4 h-4 mr-1" />
+                          <span className="text-sm">{exercise.videoIds.length} video(s)</span>
+                        </div>
+                      )}
+                      <VideoSelector
+                        exerciseId={exercise.id}
+                        selectedVideoIds={exercise.videoIds}
+                        onVideoSelect={(videoId) => handleVideoSelect(videoId, exercise.id)}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
