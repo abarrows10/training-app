@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Play, Plus, Trash } from 'lucide-react';
+import { Play, Trash } from 'lucide-react';
 import { useStore } from '@/store';
 
 interface VideoSelectorProps {
@@ -45,7 +45,7 @@ const VideoSelector: React.FC<VideoSelectorProps> = ({
             <div className="relative">
               <img 
                 src={video.thumbnail} 
-                alt={video.filename}
+                alt={video.title}
                 className="w-full h-32 object-cover"
               />
               <button 
@@ -54,16 +54,20 @@ const VideoSelector: React.FC<VideoSelectorProps> = ({
               >
                 <Play className="w-8 h-8 text-white" />
               </button>
+              <div className="absolute top-2 right-2 bg-black bg-opacity-75 px-2 py-1 rounded text-xs text-white">
+                {video.type === 'youtube' ? 'YouTube' : 'Vimeo'}
+              </div>
             </div>
             
             <div className="p-2">
               <div className="flex justify-between items-start">
-                <div className="text-sm text-black font-medium truncate">
-                  {video.filename}
+                <div className="text-sm text-black font-medium truncate flex-1 pr-2">
+                  {video.title}
                 </div>
                 <button
                   onClick={() => onVideoSelect(video.id)}
-                  className="p-1 rounded-full text-red-500 hover:text-red-600"
+                  className="p-1 rounded-full text-red-500 hover:text-red-600 flex-shrink-0"
+                  title="Remove video"
                 >
                   <Trash className="w-4 h-4" />
                 </button>
