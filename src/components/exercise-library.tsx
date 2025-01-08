@@ -126,12 +126,12 @@ const ExerciseLibrary = () => {
 
   return (
     <div>
-      <div className="bg-[#242526] rounded-xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-white">Baseball/Softball Drills</h2>
+      <div className="bg-[#242526] rounded-xl shadow-lg p-3 md:p-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 md:gap-0">
+          <h2 className="text-xl md:text-2xl font-bold text-white">Baseball/Softball Drills</h2>
           <button 
             onClick={() => setShowAddForm(true)}
-            className="bg-[#00A3E0] text-white px-4 py-2 rounded hover:bg-[#0077A3] flex items-center transition-colors"
+            className="w-full md:w-auto bg-[#00A3E0] text-white px-4 py-2 rounded hover:bg-[#0077A3] flex items-center justify-center"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Drill
@@ -139,7 +139,7 @@ const ExerciseLibrary = () => {
         </div>
 
         {showAddForm && (
-          <div className="mb-6 p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]">
+          <div className="mb-6 p-3 md:p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]">
             <form onSubmit={handleAddExercise}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <input
@@ -170,7 +170,7 @@ const ExerciseLibrary = () => {
 
                 <div className="md:col-span-2">
                   <VideoSelector
-                    exerciseId={"-1"}
+                    exerciseId="-1"
                     selectedVideoIds={newExercise.videoIds}
                     onVideoSelect={(videoId) => {
                       setNewExercise(prev => ({
@@ -183,17 +183,17 @@ const ExerciseLibrary = () => {
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-col md:flex-row justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
-                  className="px-4 py-2 border border-[#3A3B3C] rounded hover:bg-[#3A3B3C] text-white transition-colors"
+                  className="w-full md:w-auto px-4 py-2 border border-[#3A3B3C] rounded hover:bg-[#3A3B3C] text-white transition-colors order-2 md:order-1"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-[#00A3E0] text-white rounded hover:bg-[#0077A3] transition-colors"
+                  className="w-full md:w-auto px-4 py-2 bg-[#00A3E0] text-white rounded hover:bg-[#0077A3] transition-colors order-1 md:order-2"
                 >
                   Add Drill
                 </button>
@@ -212,7 +212,7 @@ const ExerciseLibrary = () => {
               className="pl-10 p-2 w-full bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
             {categories.map(category => (
               <button
                 key={category}
@@ -229,22 +229,22 @@ const ExerciseLibrary = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredExercises.map((exercise) => (
             <div key={exercise.id} className="border border-[#3A3B3C] rounded-lg overflow-hidden bg-[#18191A]">
-              <div className="p-4">
+              <div className="p-3 md:p-4">
                 {editingId === exercise.id ? (
                   <div className="space-y-3">
                     <input
                       type="text"
                       value={editForm.name}
                       onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none"
                     />
                     <select
                       value={editForm.category}
                       onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none"
                     >
                       {categories.filter(cat => cat !== 'All').map(category => (
                         <option key={category} value={category} className="bg-[#242526] text-white">{category}</option>
@@ -253,7 +253,7 @@ const ExerciseLibrary = () => {
                     <textarea
                       value={editForm.description}
                       onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none"
                       rows={3}
                     />
                     <VideoSelector
@@ -287,7 +287,7 @@ const ExerciseLibrary = () => {
                   <div>
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-semibold text-white">{exercise.name}</h3>
+                        <h3 className="text-base md:text-lg font-semibold text-white">{exercise.name}</h3>
                         <span className="text-sm text-gray-300">{exercise.category}</span>
                       </div>
                       <div className="flex gap-2">
