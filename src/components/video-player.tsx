@@ -17,30 +17,26 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
 
     const { type, videoId } = parseVideoUrl(url);
     if (type && videoId) {
-      let baseEmbedUrl = getEmbedUrl(type, videoId);
+      const baseUrl = getEmbedUrl(type, videoId);
       
-      // Add parameters based on video platform
       const params = new URLSearchParams({
-        // YouTube specific
-        ...(type === 'youtube' && {
+        ...(type === 'youtube' ? {
           autoplay: '0',
-          controls: '1',
-          modestbranding: '1',
           rel: '0',
-          origin: window.location.origin,
+          showinfo: '0',
+          modestbranding: '1',
+          playsinline: '1',
           enablejsapi: '1',
-          widgetid: '1'
-        }),
-        // Vimeo specific
-        ...(type === 'vimeo' && {
-          title: '0',
+          origin: typeof window !== 'undefined' ? window.location.origin : '',
+        } : {
+          autoplay: '0',
           byline: '0',
           portrait: '0',
-          dnt: '1'
+          title: '0'
         })
       });
 
-      setEmbedUrl(`${baseEmbedUrl}?${params.toString()}`);
+      setEmbedUrl(`${baseUrl}?${params.toString()}`);
     }
   }, [url]);
 
@@ -66,10 +62,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
           <iframe
             src={embedUrl}
             className="absolute inset-0 w-full h-full"
-            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            referrerPolicy="strict-origin-when-cross-origin"
+            loading="lazy"
+            referrerPolicy="origin"
             title={title}
           />
         </div>
