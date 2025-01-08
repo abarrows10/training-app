@@ -1,119 +1,84 @@
 "use client";
 
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React from 'react';
+import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, ResponsiveContainer } from 'recharts';
 import { useStore } from '@/store';
 
 interface ProgressStatsProps {
-  athleteId: number;
+  athleteId: string;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
 }
 
-const ProgressStats: React.FC<ProgressStatsProps> = ({ athleteId }) => {
-  const { getAthleteStats, athletes } = useStore();
-  const [dateRange, setDateRange] = useState<{start: string; end: string}>(() => {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(end.getDate() - 30); // Default to last 30 days
-    return {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0]
-    };
-  });
-
+const ProgressStats: React.FC<ProgressStatsProps> = ({ athleteId, dateRange }) => {
+  const { getAthleteStats } = useStore();
   const stats = getAthleteStats(athleteId, dateRange);
-  const athlete = athletes.find(a => a.id === athleteId);
 
-  const adjustDateRange = (days: number) => {
-    const newEnd = new Date();
-    const newStart = new Date();
-    newStart.setDate(newEnd.getDate() - days);
-    setDateRange({
-      start: newStart.toISOString().split('T')[0],
-      end: newEnd.toISOString().split('T')[0]
-    });
-  };
+  const completionData = stats.completionDates.map(date => ({
+    date,
+    exercises: 1
+  }));
 
-  const getDaysDifference = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
-
-  const totalVolume = stats.totalSets * stats.totalReps;
-  const activeDays = stats.completionDates.length;
+  const exerciseCategoryData = Object.entries(stats.exercisesByCategory).map(([category, count]) => ({
+    category,
+    count
+  }));
 
   return (
-    <div className="bg-[#242526] rounded-xl shadow-lg p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Training Stats - {athlete?.name}</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => adjustDateRange(7)}
-            className={`px-4 py-2 rounded transition-colors ${
-              getDaysDifference(dateRange.start, dateRange.end) === 7
-                ? 'bg-[#00A3E0] text-white'
-                : 'border border-[#3A3B3C] text-gray-300 hover:bg-[#3A3B3C]'
-            }`}
-          >
-            7 Days
-          </button>
-          <button
-            onClick={() => adjustDateRange(30)}
-            className={`px-4 py-2 rounded transition-colors ${
-              getDaysDifference(dateRange.start, dateRange.end) === 30
-                ? 'bg-[#00A3E0] text-white'
-                : 'border border-[#3A3B3C] text-gray-300 hover:bg-[#3A3B3C]'
-            }`}
-          >
-            30 Days
-          </button>
-          <button
-            onClick={() => adjustDateRange(90)}
-            className={`px-4 py-2 rounded transition-colors ${
-              getDaysDifference(dateRange.start, dateRange.end) === 90
-                ? 'bg-[#00A3E0] text-white'
-                : 'border border-[#3A3B3C] text-gray-300 hover:bg-[#3A3B3C]'
-            }`}
-          >
-            90 Days
-          </button>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-black mb-2">Total Workouts</h3>
+          <p className="text-3xl font-bold text-blue-600">{stats.totalWorkouts}</p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-black mb-2">Total Exercises</h3>
+          <p className="text-3xl font-bold text-green-600">{stats.totalExercises}</p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-black mb-2">Total Sets</h3>
+          <p className="text-3xl font-bold text-purple-600">{stats.totalSets}</p>
+        </div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-black mb-2">Total Reps</h3>
+          <p className="text-3xl font-bold text-red-600">{stats.totalReps}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]">
-          <div className="text-sm text-gray-400 mb-1">Workouts Completed</div>
-          <div className="text-2xl font-bold text-white">{stats.totalWorkouts}</div>
-        </div>
-
-        <div className="p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]">
-          <div className="text-sm text-gray-400 mb-1">Active Days</div>
-          <div className="text-2xl font-bold text-white">{activeDays}</div>
-        </div>
-
-        <div className="p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]">
-          <div className="text-sm text-gray-400 mb-1">Total Exercises</div>
-          <div className="text-2xl font-bold text-white">{stats.totalExercises}</div>
-        </div>
-
-        <div className="p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]">
-          <div className="text-sm text-gray-400 mb-1">Total Volume</div>
-          <div className="text-2xl font-bold text-white">{totalVolume}</div>
-          <div className="text-xs text-gray-400">
-            {stats.totalSets} sets × {stats.totalReps} reps
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-black mb-4">Exercise Completion Over Time</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={completionData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="exercises" stroke="#3b82f6" />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {Object.entries(stats.exercisesByCategory).map(([category, count]) => (
-          <div key={category} className="p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]">
-            <div className="text-lg font-semibold text-white mb-1">{category}</div>
-            <div className="text-3xl font-bold text-[#00A3E0]">{count}</div>
-            <div className="text-sm text-gray-400">Exercises Completed</div>
+        <div className="bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-black mb-4">Exercises by Category</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={exerciseCategoryData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="category" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="count" stroke="#10b981" />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );

@@ -1,39 +1,43 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '@/store';
 import ProgressStats from '@/components/ProgressStats';
 
 export default function AnalyticsPage() {
   const { athletes } = useStore();
-  const [selectedAthlete, setSelectedAthlete] = useState<number>(0);
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string>('');
+  const [dateRange, setDateRange] = useState<{ start: string; end: string; } | undefined>();
+
+  if (!athletes.length) {
+    return (
+      <div className="p-8">
+        <div className="text-center text-gray-500">
+          No athletes available. Add athletes to view analytics.
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="flex flex-col items-center gap-8 mb-8">
-        <h2 className="text-2xl font-bold text-white">Analytics</h2>
+    <div className="p-8 space-y-8">
+      <div className="flex justify-between items-center">
         <select
-          value={selectedAthlete}
-          onChange={(e) => setSelectedAthlete(Number(e.target.value))}
-          className="p-4 border border-[#3A3B3C] rounded-lg text-white text-lg font-semibold w-72 bg-[#242526] hover:border-[#00A3E0] transition-colors focus:outline-none focus:border-[#00A3E0]"
+          value={selectedAthleteId}
+          onChange={(e) => setSelectedAthleteId(e.target.value)}
+          className="p-2 border rounded"
         >
-          <option value={0} className="bg-[#242526]">Select Athlete</option>
+          <option value="">Select Athlete</option>
           {athletes.map(athlete => (
-            <option key={athlete.id} value={athlete.id} className="bg-[#242526]">
+            <option key={athlete.id} value={athlete.id}>
               {athlete.name}
             </option>
           ))}
         </select>
       </div>
 
-      {selectedAthlete !== 0 ? (
-        <ProgressStats athleteId={selectedAthlete} />
-      ) : (
-        <div className="bg-[#242526] rounded-xl shadow-lg p-6">
-          <div className="text-center text-gray-400 py-8">
-            Please select an athlete to view their stats
-          </div>
-        </div>
+      {selectedAthleteId && (
+        <ProgressStats athleteId={selectedAthleteId} dateRange={dateRange} />
       )}
     </div>
   );

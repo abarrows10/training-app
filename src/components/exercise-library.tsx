@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { Exercise } from '@/types/interfaces';
 import { Search, Plus, Video, Trash, Edit, X, Check } from 'lucide-react';
 import { useStore } from '@/store';
-import VideoSelector from '../components/Video-Selector';
+import VideoSelector from './Video-Selector';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 
@@ -11,23 +12,17 @@ interface NewExercise {
   name: string;
   category: string;
   description: string;
-  videoIds: number[];
+  videoIds: string[];
 }
 
-interface Exercise {
-  id: number;
-  name: string;
-  category: string;
-  description: string;
-  videoIds: number[];
-}
+const categories = ['All', 'Hitting', 'Fielding', 'Throwing', 'Pitching', 'Band Exercises', 'Speed & Agility'];
 
 const ExerciseLibrary = () => {
   const { exercises, addExercise, removeExercise, updateExercise, linkVideoToExercise, unlinkVideoFromExercise, setExercises } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<NewExercise>({
     name: '',
     category: 'Hitting',
@@ -45,9 +40,7 @@ const ExerciseLibrary = () => {
     console.log('Loaded exercises:', exercises);
   }, [exercises]);
 
-  const categories = ['All', 'Hitting', 'Fielding', 'Throwing', 'Pitching', 'Band Exercises', 'Speed & Agility'];
-
-  const handleVideoSelect = (videoId: number, exerciseId: number) => {
+  const handleVideoSelect = (videoId: string, exerciseId: string) => {
     const exercise = exercises.find(e => e.id === exerciseId);
     if (!exercise) return;
 
@@ -58,13 +51,13 @@ const ExerciseLibrary = () => {
     }
   };
 
-  const startEdit = (exercise: any) => {
+  const startEdit = (exercise: Exercise) => {
     setEditingId(exercise.id);
     setEditForm({
       name: exercise.name,
       category: exercise.category,
       description: exercise.description,
-      videoIds: exercise.videoIds || []
+      videoIds: exercise.videoIds
     });
   };
 
@@ -78,30 +71,35 @@ const ExerciseLibrary = () => {
     });
   };
 
-  const saveEdit = (id: number) => {
+  const saveEdit = (id: string) => {
     updateExercise(id, editForm);
     setEditingId(null);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
-      console.log('Type of id:', typeof id);
-      console.log('Original id:', id);
-      const numericId = Number(id);
-      console.log('Converted numericId:', numericId);
-      await removeExercise(numericId);
+      const exercise = exercises.find(e => e.id === id);
+      if (!exercise) {
+        console.error('Could not find exercise');
+        return;
+      }
+  
+      console.log('Deleting exercise with ID:', id);
+      await removeExercise(id);
       
       const exercisesRef = collection(db, 'exercises');
       const snapshot = await getDocs(exercisesRef);
-      const exerciseData = snapshot.docs.map(doc => {
-        console.log('Doc ID:', doc.id, 'Doc data:', doc.data());
-        return {
-          ...doc.data(),
-          id: Number(doc.id)
-        };
-      }) as Exercise[];
-      setExercises(exerciseData);
+      const exerciseData = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        docId: doc.id,
+        name: doc.data().name,
+        category: doc.data().category,
+        description: doc.data().description,
+        videoIds: (doc.data().videoIds || []).map(String)
+      })) as Exercise[];
       
+      setExercises(exerciseData);
       console.log('Exercise deleted successfully');
     } catch (error) {
       console.error('Error deleting exercise:', error);
@@ -109,7 +107,6 @@ const ExerciseLibrary = () => {
   };
 
   const filteredExercises = exercises.filter(exercise => {
-    console.log('Exercise being filtered:', exercise);
     const matchesSearch = exercise.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || exercise.category === selectedCategory;
     return matchesSearch && matchesCategory;
@@ -173,7 +170,7 @@ const ExerciseLibrary = () => {
 
                 <div className="md:col-span-2">
                   <VideoSelector
-                    exerciseId={-1}
+                    exerciseId={"-1"}
                     selectedVideoIds={newExercise.videoIds}
                     onVideoSelect={(videoId) => {
                       setNewExercise(prev => ({
@@ -233,104 +230,98 @@ const ExerciseLibrary = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredExercises.map((exercise) => {
-            console.log('Exercise in render:', exercise);
-            return (
-              <div key={exercise.id} className="border border-[#3A3B3C] rounded-lg overflow-hidden bg-[#18191A]">
-                <div className="p-4">
-                  {editingId === exercise.id ? (
-                    <div className="space-y-3">
-                      <input
-                        type="text"
-                        value={editForm.name}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-                      />
-                      <select
-                        value={editForm.category}
-                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+          {filteredExercises.map((exercise) => (
+            <div key={exercise.id} className="border border-[#3A3B3C] rounded-lg overflow-hidden bg-[#18191A]">
+              <div className="p-4">
+                {editingId === exercise.id ? (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                    />
+                    <select
+                      value={editForm.category}
+                      onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                    >
+                      {categories.filter(cat => cat !== 'All').map(category => (
+                        <option key={category} value={category} className="bg-[#242526] text-white">{category}</option>
+                      ))}
+                    </select>
+                    <textarea
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                      rows={3}
+                    />
+                    <VideoSelector
+                      exerciseId={exercise.id}
+                      selectedVideoIds={editForm.videoIds}
+                      onVideoSelect={(videoId) => {
+                        setEditForm(prev => ({
+                          ...prev,
+                          videoIds: prev.videoIds.includes(videoId)
+                            ? prev.videoIds.filter(id => id !== videoId)
+                            : [...prev.videoIds, videoId]
+                        }));
+                      }}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={cancelEdit}
+                        className="text-gray-400 hover:text-white transition-colors"
                       >
-                        {categories.filter(cat => cat !== 'All').map(category => (
-                          <option key={category} value={category} className="bg-[#242526] text-white">{category}</option>
-                        ))}
-                      </select>
-                      <textarea
-                        value={editForm.description}
-                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-                        rows={3}
-                      />
-                      <VideoSelector
-                        exerciseId={exercise.id}
-                        selectedVideoIds={editForm.videoIds}
-                        onVideoSelect={(videoId) => {
-                          setEditForm(prev => ({
-                            ...prev,
-                            videoIds: prev.videoIds.includes(videoId)
-                              ? prev.videoIds.filter(id => id !== videoId)
-                              : [...prev.videoIds, videoId]
-                          }));
-                        }}
-                      />
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={cancelEdit}
-                          className="text-gray-400 hover:text-white transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => saveEdit(exercise.id)}
+                        <X className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => saveEdit(exercise.id)}
+                        className="text-[#00A3E0] hover:text-[#0077A3] transition-colors"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-white">{exercise.name}</h3>
+                        <span className="text-sm text-gray-300">{exercise.category}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => startEdit(exercise)}
                           className="text-[#00A3E0] hover:text-[#0077A3] transition-colors"
                         >
-                          <Check className="w-4 h-4" />
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(exercise.id)}
+                          className="text-red-500 hover:text-red-600 transition-colors"
+                        >
+                          <Trash className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-                  ) : (
-                    <div>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-white">{exercise.name}</h3>
-                          <span className="text-sm text-gray-300">{exercise.category}</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => startEdit(exercise)}
-                            className="text-[#00A3E0] hover:text-[#0077A3] transition-colors"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button 
-                            onClick={() => {
-                              console.log('Delete clicked, exercise id:', exercise.id);
-                              handleDelete(exercise.id);
-                            }}
-                            className="text-red-500 hover:text-red-600 transition-colors"
-                          >
-                            <Trash className="w-4 h-4" />
-                          </button>
-                        </div>
+                    <p className="text-sm text-gray-300 mt-2">{exercise.description}</p>
+                    {exercise.videoIds && exercise.videoIds.length > 0 && (
+                      <div className="mt-2 flex items-center text-[#00A3E0]">
+                        <Video className="w-4 h-4 mr-1" />
+                        <span className="text-sm">{exercise.videoIds.length} video(s)</span>
                       </div>
-                      <p className="text-sm text-gray-300 mt-2">{exercise.description}</p>
-                      {exercise.videoIds && exercise.videoIds.length > 0 && (
-                        <div className="mt-2 flex items-center text-[#00A3E0]">
-                          <Video className="w-4 h-4 mr-1" />
-                          <span className="text-sm">{exercise.videoIds.length} video(s)</span>
-                        </div>
-                      )}
-                      <VideoSelector
-                        exerciseId={exercise.id}
-                        selectedVideoIds={exercise.videoIds}
-                        onVideoSelect={(videoId) => handleVideoSelect(videoId, exercise.id)}
-                      />
-                    </div>
-                  )}
-                </div>
+                    )}
+                    <VideoSelector
+                      exerciseId={exercise.id}
+                      selectedVideoIds={exercise.videoIds}
+                      onVideoSelect={(videoId) => handleVideoSelect(videoId, exercise.id)}
+                    />
+                  </div>
+                )}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
     </div>

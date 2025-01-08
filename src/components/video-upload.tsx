@@ -1,68 +1,73 @@
 "use client";
 
-import React, { useState } from 'react';
-import { X, Play } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Upload, X, Play } from 'lucide-react';
 import { useStore } from '@/store';
+import { Video } from '@/types/interfaces';
 
 const VideoUpload = () => {
-  const { videos, addVideo, removeVideo, exercises, linkVideoToExercise } = useStore();
-  const [selectedExercise, setSelectedExercise] = useState<number>(0);
-  const [videoUrl, setVideoUrl] = useState('');
+  const { videos, addVideo, updateVideoStatus, removeVideo, exercises, linkVideoToExercise } = useStore();
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const activeUploads = videos.filter(v => v.status === 'uploading');
   const completedVideos = videos.filter(v => v.status === 'complete');
 
-  const getVideoThumbnail = (url: string) => {
-    // YouTube formats
-    const youtubeId = url.match(/(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([^&\?]+)/)?.[1];
-    if (youtubeId) {
-      return `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
-    }
-
-    // Vimeo format - use placeholder since we can't easily get the thumbnail
-    const vimeoMatch = url.match(/vimeo\.com/);
-    if (vimeoMatch) {
-      return '/api/placeholder/320/180';
-    }
-
-    return '/api/placeholder/320/180';
-  };
-
-  const handleVideoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFiles = async (files: File[]) => {
     if (!selectedExercise) {
       alert('Please select an exercise first');
       return;
     }
 
-    if (!videoUrl) {
-      alert('Please enter a video URL');
-      return;
-    }
+    for (const file of files) {
+      if (!file.type.startsWith('video/')) {
+        alert('Please upload only video files');
+        continue;
+      }
 
-    // Validate URL format
-    if (!videoUrl.match(/youtube\.com|youtu\.be|vimeo\.com/)) {
-      alert('Please enter a valid YouTube or Vimeo URL');
-      return;
-    }
+      try {
+        const url = URL.createObjectURL(file);
+        const thumbnail = '/api/placeholder/320/180';
 
-    try {
-      const videoId = await addVideo({
-        filename: `Video ${new Date().toLocaleString()}`,
-        url: videoUrl,
-        thumbnail: getVideoThumbnail(videoUrl),
-        uploadDate: new Date().toISOString(),
-        status: 'complete'
-      });
+        const videoId = await addVideo({
+          filename: file.name,
+          url: url,
+          thumbnail,
+          uploadDate: new Date().toISOString(),
+          status: 'uploading'
+        });
 
-      await linkVideoToExercise(videoId, selectedExercise);
-      setVideoUrl('');
-    } catch (error) {
-      console.error('Error adding video:', error);
-      alert('Error adding video. Please try again.');
+        // Link video to exercise immediately
+        await linkVideoToExercise(videoId, selectedExercise);
+
+        // Simulate upload completion
+        setTimeout(() => {
+          updateVideoStatus(videoId, 'complete');
+        }, 1500);
+
+      } catch (error) {
+        console.error('Error processing video:', error);
+        alert('Error uploading video. Please try again.');
+      }
     }
   };
 
-  const getExerciseName = (videoId: number) => {
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    handleFiles(Array.from(e.dataTransfer.files));
+  };
+
+  // Get exercise name for a video
+  const getExerciseName = (videoId: string) => {
     const exercise = exercises.find(e => e.videoIds?.includes(videoId));
     return exercise ? exercise.name : 'Unassigned';
   };
@@ -78,11 +83,11 @@ const VideoUpload = () => {
           </label>
           <select
             value={selectedExercise}
-            onChange={(e) => setSelectedExercise(Number(e.target.value))}
+            onChange={(e) => setSelectedExercise(e.target.value)}
             className="w-full p-2 border border-[#3A3B3C] rounded-lg text-white bg-[#18191A]"
             required
           >
-            <option value={0}>Select an exercise...</option>
+            <option value="">Select an exercise...</option>
             {exercises.map(exercise => (
               <option key={exercise.id} value={exercise.id}>
                 {exercise.name} ({exercise.category})
@@ -90,32 +95,79 @@ const VideoUpload = () => {
             ))}
           </select>
         </div>
-        
-        <form onSubmit={handleVideoSubmit} className="mb-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Video URL:
-              </label>
-              <input
-                type="url"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="Enter YouTube or Vimeo URL..."
-                className="w-full p-2 border border-[#3A3B3C] rounded-lg text-white bg-[#18191A]"
-                required
-              />
-            </div>
-            <button 
-              type="submit"
-              className="w-full px-4 py-2 bg-[#00A3E0] text-white rounded-lg hover:bg-[#0077A3] transition-colors"
-            >
-              Add Video
-            </button>
-          </div>
-        </form>
 
-        {completedVideos.length > 0 && (
+        <div
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-lg p-8 text-center mb-6 ${
+            dragActive ? 'border-[#00A3E0] bg-[#18191A]' : 'border-[#3A3B3C]'
+          }`}
+        >
+          <Upload className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+          <div className="text-lg font-medium mb-2 text-white">
+            Drag and drop video files here
+          </div>
+          <div className="text-sm mb-4 text-gray-300">
+            Or click to select files from your computer
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={(e) => handleFiles(Array.from(e.target.files || []))}
+            multiple
+          />
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="px-4 py-2 border border-[#3A3B3C] rounded-lg hover:bg-[#3A3B3C] text-white transition-colors"
+          >
+            Select Files
+          </button>
+        </div>
+
+        {activeUploads.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-white mb-4">Active Uploads</h3>
+            <div className="space-y-4">
+              {activeUploads.map(video => (
+                <div key={video.id} className="border border-[#3A3B3C] rounded-lg p-4 bg-[#18191A]">
+                  <div className="flex gap-4">
+                    <div className="relative w-40 h-24 flex-shrink-0">
+                      <img
+                        src={video.thumbnail}
+                        alt={video.filename}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="font-medium text-white">{video.filename}</div>
+                          <div className="text-sm text-gray-400">
+                            {getExerciseName(video.id)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="w-full bg-[#3A3B3C] rounded-full h-2">
+                        <div
+                          className="bg-[#00A3E0] h-2 rounded-full transition-all duration-300"
+                          style={{ width: '50%' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+{completedVideos.length > 0 && (
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">Video Library</h3>
             <div className="space-y-4">
@@ -130,7 +182,7 @@ const VideoUpload = () => {
                       />
                       <button 
                         onClick={() => window.open(video.url, '_blank')}
-                        className="absolute inset-0 m-auto w-10 h-10 rounded-full bg-black bg-opacity-50 flex items-center justify-center text-white hover:bg-opacity-70"
+                        className="absolute inset-0 m-auto w-10 h-10 rounded-full bg-black bg-opacity-50 flex items-center justify-center text-white"
                       >
                         <Play className="w-4 h-4" />
                       </button>

@@ -8,7 +8,7 @@ import WorkoutDetail from './workout-detail';
 import VideoPlayer from './video-player';
 
 interface Video {
-  id: number;
+  id: string;
   filename: string;
   url: string;
   thumbnail: string;
@@ -18,8 +18,8 @@ interface Video {
 
 const AthleteView = () => {
   const { scheduledWorkouts, workouts, exercises, sequences, videos, athletes } = useStore();
-  const [selectedAthleteId, setSelectedAthleteId] = useState<number | null>(null);
-  const [selectedWorkoutId, setSelectedWorkoutId] = useState<number | null>(null);
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
 
   const getNextSevenDays = () => {
     const week = [];
@@ -68,7 +68,7 @@ const AthleteView = () => {
           </Link>
           <select
             value={selectedAthleteId || ''}
-            onChange={(e) => setSelectedAthleteId(Number(e.target.value))}
+            onChange={(e) => setSelectedAthleteId(e.target.value)}
             className="p-4 border border-[#3A3B3C] rounded-lg text-white text-lg font-semibold w-72 bg-[#242526] hover:border-[#00A3E0] transition-colors focus:outline-none focus:border-[#00A3E0]"
           >
             <option value="">Select Athlete</option>
@@ -98,7 +98,7 @@ const AthleteView = () => {
         <div className="flex-1 flex justify-center">
           <select
             value={selectedAthleteId}
-            onChange={(e) => setSelectedAthleteId(Number(e.target.value))}
+            onChange={(e) => setSelectedAthleteId(e.target.value)}
             className="p-4 border border-[#3A3B3C] rounded-lg text-white text-lg font-semibold w-72 bg-[#242526] hover:border-[#00A3E0] transition-colors focus:outline-none focus:border-[#00A3E0]"
           >
             {athletes.map(athlete => (

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 type Workout = {
-  id: number;
+  id: string;
   name: string;
   time: string;
   clientName: string;
@@ -49,11 +49,11 @@ const WorkoutCalendar = () => {
   // Sample workout data with proper typing
   const workouts: WorkoutSchedule = {
     'Mon Dec 23 2024': [
-      { id: 1, name: 'Upper Body Strength', time: '09:00 AM', clientName: 'John Doe' },
-      { id: 2, name: 'Core Basics', time: '02:00 PM', clientName: 'Jane Smith' }
+      { id: '1', name: 'Upper Body Strength', time: '09:00 AM', clientName: 'John Doe' },
+      { id: '2', name: 'Core Basics', time: '02:00 PM', clientName: 'Jane Smith' }
     ],
     'Wed Dec 25 2024': [
-      { id: 3, name: 'Lower Body Focus', time: '10:30 AM', clientName: 'Mike Johnson' }
+      { id: '3', name: 'Lower Body Focus', time: '10:30 AM', clientName: 'Mike Johnson' }
     ]
   };
 

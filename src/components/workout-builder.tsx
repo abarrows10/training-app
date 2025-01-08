@@ -3,14 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, Save, Trash, ArrowUp, ArrowDown, Edit, X, Check } from 'lucide-react';
 import { useStore } from '@/store';
-
-interface WorkoutItem {
-  id: number;
-  type: 'sequence' | 'drill';
-  itemId: number;
-  sets?: number;
-  reps?: number;
-}
+import { WorkoutItem, Workout } from '@/types/interfaces';
 
 interface WorkoutForm {
   name: string;
@@ -23,17 +16,25 @@ const WorkoutBuilder = () => {
     name: '',
     items: []
   });
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editWorkout, setEditWorkout] = useState<WorkoutForm>({
     name: '',
     items: []
   });
 
   const addItem = (type: 'sequence' | 'drill', isEditing: boolean = false) => {
+    const newItem: WorkoutItem = {
+      id: Date.now().toString(),
+      type,
+      itemId: '',
+      sets: 0,
+      reps: 0
+    };
+
     const setFunction = isEditing ? setEditWorkout : setWorkout;
     setFunction(prev => ({
       ...prev,
-      items: [...prev.items, { id: Date.now(), type, itemId: 0, sets: 0, reps: 0 }]
+      items: [...prev.items, newItem]
     }));
   };
 
@@ -76,7 +77,7 @@ const WorkoutBuilder = () => {
       alert('Please add at least one item');
       return;
     }
-    if (workout.items.some(item => item.itemId === 0)) {
+    if (workout.items.some(item => item.itemId === '')) {
       alert('Please select all items');
       return;
     }
@@ -85,7 +86,7 @@ const WorkoutBuilder = () => {
     alert('Workout saved successfully!');
   };
 
-  const startEdit = (workout: any) => {
+  const startEdit = (workout: Workout) => {
     setEditingId(workout.id);
     setEditWorkout({
       name: workout.name,
@@ -98,7 +99,7 @@ const WorkoutBuilder = () => {
     setEditWorkout({ name: '', items: [] });
   };
 
-  const saveEdit = (id: number) => {
+  const saveEdit = (id: string) => {
     if (!editWorkout.name.trim()) {
       alert('Please add a workout name');
       return;
@@ -107,7 +108,7 @@ const WorkoutBuilder = () => {
       alert('Please add at least one item');
       return;
     }
-    if (editWorkout.items.some(item => item.itemId === 0)) {
+    if (editWorkout.items.some(item => item.itemId === '')) {
       alert('Please select all items');
       return;
     }
@@ -135,7 +136,7 @@ const WorkoutBuilder = () => {
     <>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-2">
+          <h2 className="text-2xl font-bold text-black mb-2">
             {isEditing ? 'Edit Workout' : 'Workout Builder'}
           </h2>
           <input
@@ -146,20 +147,20 @@ const WorkoutBuilder = () => {
               const setFunction = isEditing ? setEditWorkout : setWorkout;
               setFunction(prev => ({ ...prev, name: e.target.value }));
             }}
-            className="p-2 w-full md:w-96 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+            className="p-2 border rounded text-black w-full md:w-96"
           />
         </div>
         <div className="flex gap-2">
           <button 
             onClick={() => addItem('sequence', isEditing)}
-            className="bg-[#00A3E0] text-white px-4 py-2 rounded hover:bg-[#0077A3] flex items-center transition-colors"
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Sequence
           </button>
           <button 
             onClick={() => addItem('drill', isEditing)}
-            className="bg-[#00A3E0] text-white px-4 py-2 rounded hover:bg-[#0077A3] flex items-center transition-colors"
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Single Drill
@@ -171,21 +172,21 @@ const WorkoutBuilder = () => {
         {currentWorkout.items.map((item, index) => (
           <div 
             key={item.id}
-            className="p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]"
+            className="p-4 border rounded-lg bg-gray-50"
           >
             <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="flex md:flex-col gap-2">
                 <button
                   onClick={() => moveItem(index, 'up', isEditing)}
                   disabled={index === 0}
-                  className={`text-gray-400 hover:text-white transition-colors ${index === 0 ? 'opacity-50' : ''}`}
+                  className={`text-gray-500 hover:text-gray-700 ${index === 0 ? 'opacity-50' : ''}`}
                 >
                   <ArrowUp className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => moveItem(index, 'down', isEditing)}
                   disabled={index === currentWorkout.items.length - 1}
-                  className={`text-gray-400 hover:text-white transition-colors ${
+                  className={`text-gray-500 hover:text-gray-700 ${
                     index === currentWorkout.items.length - 1 ? 'opacity-50' : ''
                   }`}
                 >
@@ -196,20 +197,20 @@ const WorkoutBuilder = () => {
               <div className="flex flex-1 gap-4">
                 <select
                   value={item.itemId}
-                  onChange={(e) => updateItem(index, { itemId: Number(e.target.value) }, isEditing)}
-                  className="flex-1 p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                  onChange={(e) => updateItem(index, { itemId: e.target.value }, isEditing)}
+                  className="flex-1 p-2 border rounded text-black"
                 >
-                  <option value={0} className="bg-[#242526] text-white">
+                  <option value="">
                     {item.type === 'sequence' ? 'Select a sequence...' : 'Select a drill...'}
                   </option>
                   {item.type === 'sequence' 
                     ? sequences.map(sequence => (
-                        <option key={sequence.id} value={sequence.id} className="bg-[#242526] text-white">
+                        <option key={sequence.id} value={sequence.id}>
                           {sequence.name}
                         </option>
                       ))
                     : exercises.map(exercise => (
-                        <option key={exercise.id} value={exercise.id} className="bg-[#242526] text-white">
+                        <option key={exercise.id} value={exercise.id}>
                           {exercise.name} ({exercise.category})
                         </option>
                       ))
@@ -222,7 +223,7 @@ const WorkoutBuilder = () => {
                   placeholder="Sets"
                   value={item.sets || ''}
                   onChange={(e) => updateItem(index, { sets: Number(e.target.value) }, isEditing)}
-                  className="w-20 p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                  className="w-20 p-2 border rounded text-black"
                 />
 
                 <input
@@ -231,13 +232,13 @@ const WorkoutBuilder = () => {
                   placeholder="Reps"
                   value={item.reps || ''}
                   onChange={(e) => updateItem(index, { reps: Number(e.target.value) }, isEditing)}
-                  className="w-20 p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                  className="w-20 p-2 border rounded text-black"
                 />
               </div>
               
               <button
                 onClick={() => removeItem(index, isEditing)}
-                className="text-red-500 hover:text-red-600 transition-colors"
+                className="text-red-500 hover:text-red-600"
               >
                 <Trash className="w-4 h-4" />
               </button>
@@ -246,7 +247,7 @@ const WorkoutBuilder = () => {
         ))}
 
         {currentWorkout.items.length === 0 && (
-          <div className="text-center py-8 text-gray-400">
+          <div className="text-center py-8 text-black">
             Add sequences or individual drills to build your workout
           </div>
         )}
@@ -256,7 +257,7 @@ const WorkoutBuilder = () => {
         {isEditing && (
           <button
             onClick={cancelEdit}
-            className="px-4 py-2 border border-[#3A3B3C] rounded hover:bg-[#3A3B3C] text-white flex items-center transition-colors"
+            className="px-4 py-2 border rounded hover:bg-gray-50 text-black flex items-center"
           >
             <X className="w-4 h-4 mr-2" />
             Cancel
@@ -264,7 +265,7 @@ const WorkoutBuilder = () => {
         )}
         <button 
           onClick={onSave}
-          className="bg-[#00A3E0] text-white px-4 py-2 rounded hover:bg-[#0077A3] flex items-center transition-colors"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center"
         >
           {isEditing ? <Check className="w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
           {isEditing ? 'Save Changes' : 'Save Workout'}
@@ -275,7 +276,7 @@ const WorkoutBuilder = () => {
 
   return (
     <div>
-      <div className="bg-[#242526] rounded-xl shadow-lg p-6">
+      <div className="bg-white rounded-lg shadow-lg p-6">
         {editingId ? (
           renderWorkoutForm(editWorkout, true, () => saveEdit(editingId))
         ) : (
@@ -283,31 +284,31 @@ const WorkoutBuilder = () => {
             {renderWorkoutForm(workout, false, handleSave)}
 
             {workouts.length > 0 && (
-              <div className="mt-8 border-t border-[#3A3B3C] pt-6">
-                <h3 className="text-xl font-bold text-white mb-4">Saved Workouts</h3>
+              <div className="mt-8 border-t pt-6">
+                <h3 className="text-xl font-bold text-black mb-4">Saved Workouts</h3>
                 <div className="space-y-4">
                   {workouts.map(savedWorkout => (
-                    <div key={savedWorkout.id} className="border border-[#3A3B3C] rounded-lg p-4 bg-[#18191A]">
+                    <div key={savedWorkout.id} className="border rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-bold text-white">{savedWorkout.name}</h4>
+                        <h4 className="font-bold text-black">{savedWorkout.name}</h4>
                         <div className="flex gap-2">
                           <button 
                             onClick={() => startEdit(savedWorkout)}
-                            className="text-[#00A3E0] hover:text-[#0077A3] transition-colors"
+                            className="text-blue-500 hover:text-blue-600"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button 
                             onClick={() => removeWorkout(savedWorkout.id)}
-                            className="text-red-500 hover:text-red-600 transition-colors"
+                            className="text-red-500 hover:text-red-600"
                           >
                             <Trash className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
-                      <ul className="list-disc list-inside text-gray-300">
+                      <ul className="list-disc list-inside text-black">
                         {savedWorkout.items.map((item, index) => (
-                          <li key={index} className="text-gray-300">
+                          <li key={index} className="text-black">
                             {item.type === 'sequence' ? '📑 ' : '🎯 '}
                             {getItemName(item)}
                             {item.sets && item.reps && ` - ${item.sets} sets × ${item.reps} reps`}

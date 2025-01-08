@@ -2,6 +2,16 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { 
+  Exercise, 
+  DrillSequence, 
+  Workout, 
+  ExerciseProgress,
+  Video,
+  Athlete,
+  ScheduledWorkout,
+  WorkoutItem
+} from '@/types/interfaces';
+import { 
   collection, 
   doc, 
   getDocs, 
@@ -14,111 +24,42 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 
-interface Exercise {
-  id: number;
-  name: string;
-  category: string;
-  description: string;
-  videoIds: number[];
-}
-
-interface DrillSequence {
-  id: number;
-  name: string;
-  drills: {
-    id: number;
-    exerciseId: number;
-    sets?: number;
-    reps?: number;
-  }[];
-}
-
-interface Workout {
-  id: number;
-  name: string;
-  items: {
-    id: number;
-    type: 'sequence' | 'drill';
-    itemId: number;
-    sets?: number;
-    reps?: number;
-  }[];
-}
-
-interface ScheduledWorkout {
-  id: number;
-  workoutId: number;
-  date: string;
-  athleteId: number;
-}
-
-interface Athlete {
-  id: number;
-  name: string;
-  position: string;
-  notes: string;
-}
-
-interface Video {
-  id: number;
-  filename: string;
-  url: string;
-  thumbnail: string;
-  uploadDate: string;
-  status: 'complete' | 'uploading' | 'failed';
-}
-
-interface ExerciseProgress {
-  exerciseId: number;
-  athleteId: number;
-  workoutId: number;
-  scheduledWorkoutId: number;
-  date: string;
-  timestamp: string;
-  completed: boolean;
-  category: string;
-  setsCompleted: number;
-  repsCompleted: number;
-  targetSets?: number;
-  targetReps?: number;
-}
-
 interface StoreContextType {
   athletes: Athlete[];
   addAthlete: (athlete: Omit<Athlete, 'id'>) => Promise<void>;
-  updateAthlete: (id: number, athlete: Omit<Athlete, 'id'>) => Promise<void>;
-  removeAthlete: (id: number) => Promise<void>;
+  updateAthlete: (id: string, athlete: Omit<Athlete, 'id'>) => Promise<void>;
+  removeAthlete: (id: string) => Promise<void>;
   
   exercises: Exercise[];
   setExercises: (exercises: Exercise[]) => void;
-  addExercise: (exercise: Omit<Exercise, 'id'>) => Promise<void>;
-  updateExercise: (id: number, exercise: Omit<Exercise, 'id'>) => Promise<void>;
-  removeExercise: (id: number) => Promise<void>;
+  addExercise: (exercise: Omit<Exercise, 'id' | 'docId'>) => Promise<void>;
+  updateExercise: (id: string, exercise: Omit<Exercise, 'id' | 'docId'>) => Promise<void>;
+  removeExercise: (id: string) => Promise<void>;
   
   sequences: DrillSequence[];
   addSequence: (sequence: Omit<DrillSequence, 'id'>) => Promise<void>;
-  removeSequence: (id: number) => Promise<void>;
+  removeSequence: (id: string) => Promise<void>;
   
   workouts: Workout[];
   addWorkout: (workout: Omit<Workout, 'id'>) => Promise<void>;
-  updateWorkout: (id: number, workout: Omit<Workout, 'id'>) => Promise<void>;
-  removeWorkout: (id: number) => Promise<void>;
+  updateWorkout: (id: string, workout: Omit<Workout, 'id'>) => Promise<void>;
+  removeWorkout: (id: string) => Promise<void>;
   
   scheduledWorkouts: ScheduledWorkout[];
   scheduleWorkout: (workout: Omit<ScheduledWorkout, 'id'>) => Promise<void>;
-  removeScheduledWorkout: (id: number) => Promise<void>;
+  removeScheduledWorkout: (id: string) => Promise<void>;
 
   videos: Video[];
-  addVideo: (video: Omit<Video, 'id'>) => Promise<number>;
-  updateVideoStatus: (id: number, status: Video['status']) => Promise<void>;
-  removeVideo: (id: number) => Promise<void>;
-  linkVideoToExercise: (videoId: number, exerciseId: number) => Promise<void>;
-  unlinkVideoFromExercise: (videoId: number, exerciseId: number) => Promise<void>;
+  addVideo: (video: Omit<Video, 'id'>) => Promise<string>;
+  updateVideoStatus: (id: string, status: Video['status']) => Promise<void>;
+  removeVideo: (id: string) => Promise<void>;
+  linkVideoToExercise: (videoId: string, exerciseId: string) => Promise<void>;
+  unlinkVideoFromExercise: (videoId: string, exerciseId: string) => Promise<void>;
   
   progress: ExerciseProgress[];
   updateProgress: (progress: Partial<ExerciseProgress>) => Promise<void>;
-  getProgress: (exerciseId: number, scheduledWorkoutId: number) => ExerciseProgress | undefined;
-  getAthleteStats: (athleteId: number, dateRange?: { start: string; end: string }) => {
+  getProgress: (exerciseId: string, scheduledWorkoutId: string) => ExerciseProgress | undefined;
+  getAthleteStats: (athleteId: string, dateRange?: { start: string; end: string }) => {
     totalWorkouts: number;
     totalExercises: number;
     totalSets: number;
@@ -129,8 +70,8 @@ interface StoreContextType {
 }
 
 const StoreContext = createContext<StoreContextType | null>(null);
+
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-    // State declarations with proper typing
     const [athletes, setAthletes] = useState<Athlete[]>([]);
     const [exercises, setExercises] = useState<Exercise[]>([]);
     const [sequences, setSequences] = useState<DrillSequence[]>([]);
@@ -139,7 +80,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [videos, setVideos] = useState<Video[]>([]);
     const [progress, setProgress] = useState<ExerciseProgress[]>([]);
   
-    // Firestore Listeners
     useEffect(() => {
       console.log('Setting up Firestore listeners');
   
@@ -150,7 +90,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           console.log('Received exercises update');
           const exerciseData = snapshot.docs.map(doc => ({
             ...doc.data(),
-            id: Number(doc.id)
+            id: doc.id,
+            docId: doc.id,
+            videoIds: (doc.data().videoIds || []).map(String)
           })) as Exercise[];
           setExercises(exerciseData);
         },
@@ -163,7 +105,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         (snapshot) => {
           const athleteData = snapshot.docs.map(doc => ({
             ...doc.data(),
-            id: Number(doc.id)
+            id: doc.id
           })) as Athlete[];
           setAthletes(athleteData);
         }
@@ -175,7 +117,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         (snapshot) => {
           const sequenceData = snapshot.docs.map(doc => ({
             ...doc.data(),
-            id: Number(doc.id)
+            id: doc.id,
+            drills: doc.data().drills.map((drill: any) => ({
+              ...drill,
+              id: String(drill.id),
+              exerciseId: String(drill.exerciseId)
+            }))
           })) as DrillSequence[];
           setSequences(sequenceData);
         }
@@ -187,7 +134,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         (snapshot) => {
           const workoutData = snapshot.docs.map(doc => ({
             ...doc.data(),
-            id: Number(doc.id)
+            id: doc.id,
+            items: doc.data().items.map((item: any) => ({
+              ...item,
+              id: String(item.id),
+              itemId: String(item.itemId)
+            }))
           })) as Workout[];
           setWorkouts(workoutData);
         }
@@ -199,7 +151,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         (snapshot) => {
           const scheduledData = snapshot.docs.map(doc => ({
             ...doc.data(),
-            id: Number(doc.id)
+            id: doc.id,
+            workoutId: String(doc.data().workoutId),
+            athleteId: String(doc.data().athleteId)
           })) as ScheduledWorkout[];
           setScheduledWorkouts(scheduledData);
         }
@@ -211,25 +165,36 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         (snapshot) => {
           const videoData = snapshot.docs.map(doc => ({
             ...doc.data(),
-            id: Number(doc.id)
+            id: doc.id
           })) as Video[];
           setVideos(videoData);
         }
       );
   
-      // Progress listener
-      const unsubProgress = onSnapshot(
+      // Progress listener (update this section in store.tsx)
+    const unsubProgress = onSnapshot(
         collection(db, 'progress'),
         (snapshot) => {
           const progressData = snapshot.docs.map(doc => ({
             ...doc.data(),
-            id: Number(doc.id)
-        })) as unknown as ExerciseProgress[];
+            id: doc.id,
+            exerciseId: String(doc.data().exerciseId),
+            athleteId: String(doc.data().athleteId),
+            workoutId: String(doc.data().workoutId),
+            scheduledWorkoutId: String(doc.data().scheduledWorkoutId),
+            date: doc.data().date || new Date().toISOString().split('T')[0],
+            timestamp: doc.data().timestamp || new Date().toISOString(),
+            completed: doc.data().completed || false,
+            category: doc.data().category || 'unknown',
+            setsCompleted: doc.data().setsCompleted || 0,
+            repsCompleted: doc.data().repsCompleted || 0,
+            targetSets: doc.data().targetSets,
+            targetReps: doc.data().targetReps
+          })) as ExerciseProgress[];
           setProgress(progressData);
         }
       );
   
-      // Cleanup function
       return () => {
         unsubExercises();
         unsubAthletes();
@@ -239,14 +204,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         unsubVideos();
         unsubProgress();
       };
-    }, []); // Empty dependency array means this runs once on mount
+    }, []);
+
     // Exercise functions
-  const addExercise = async (exercise: Omit<Exercise, 'id'>) => {
+  const addExercise = async (exercise: Omit<Exercise, 'id' | 'docId'>) => {
     try {
       console.log('Adding exercise:', exercise);
       const docRef = await addDoc(collection(db, 'exercises'), {
         ...exercise,
-        videoIds: exercise.videoIds || []
+        videoIds: (exercise.videoIds || []).map(String)
       });
       console.log('Exercise added with ID:', docRef.id);
     } catch (error) {
@@ -255,11 +221,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateExercise = async (id: number, exercise: Omit<Exercise, 'id'>) => {
+  const updateExercise = async (id: string, exercise: Omit<Exercise, 'id' | 'docId'>) => {
     try {
-      await updateDoc(doc(db, 'exercises', id.toString()), {
+      await updateDoc(doc(db, 'exercises', id), {
         ...exercise,
-        videoIds: exercise.videoIds || []
+        videoIds: (exercise.videoIds || []).map(String)
       });
     } catch (error) {
       console.error('Error updating exercise:', error);
@@ -267,9 +233,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const removeExercise = async (id: number) => {
+  const removeExercise = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'exercises', id.toString()));
+      await deleteDoc(doc(db, 'exercises', id));
     } catch (error) {
       console.error('Error removing exercise:', error);
       throw error;
@@ -279,25 +245,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Athlete functions
   const addAthlete = async (athlete: Omit<Athlete, 'id'>) => {
     try {
-      await addDoc(collection(db, 'athletes'), athlete);
+      const docRef = await addDoc(collection(db, 'athletes'), athlete);
+      console.log('Athlete added with ID:', docRef.id);
     } catch (error) {
       console.error('Error adding athlete:', error);
       throw error;
     }
   };
 
-  const updateAthlete = async (id: number, athlete: Omit<Athlete, 'id'>) => {
+  const updateAthlete = async (id: string, athlete: Omit<Athlete, 'id'>) => {
     try {
-      await updateDoc(doc(db, 'athletes', id.toString()), athlete);
+      await updateDoc(doc(db, 'athletes', id), athlete);
     } catch (error) {
       console.error('Error updating athlete:', error);
       throw error;
     }
   };
 
-  const removeAthlete = async (id: number) => {
+  const removeAthlete = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'athletes', id.toString()));
+      await deleteDoc(doc(db, 'athletes', id));
     } catch (error) {
       console.error('Error removing athlete:', error);
       throw error;
@@ -307,44 +274,67 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Sequence functions
   const addSequence = async (sequence: Omit<DrillSequence, 'id'>) => {
     try {
-      await addDoc(collection(db, 'sequences'), sequence);
+      const preparedSequence = {
+        ...sequence,
+        drills: sequence.drills.map(drill => ({
+          ...drill,
+          id: String(drill.id),
+          exerciseId: String(drill.exerciseId)
+        }))
+      };
+      await addDoc(collection(db, 'sequences'), preparedSequence);
     } catch (error) {
       console.error('Error adding sequence:', error);
       throw error;
     }
   };
 
-  const removeSequence = async (id: number) => {
+  const removeSequence = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'sequences', id.toString()));
+      await deleteDoc(doc(db, 'sequences', id));
     } catch (error) {
       console.error('Error removing sequence:', error);
       throw error;
     }
   };
-
   // Workout functions
   const addWorkout = async (workout: Omit<Workout, 'id'>) => {
     try {
-      await addDoc(collection(db, 'workouts'), workout);
+      const preparedWorkout = {
+        ...workout,
+        items: workout.items.map(item => ({
+          ...item,
+          id: String(item.id),
+          itemId: String(item.itemId)
+        }))
+      };
+      await addDoc(collection(db, 'workouts'), preparedWorkout);
     } catch (error) {
       console.error('Error adding workout:', error);
       throw error;
     }
   };
 
-  const updateWorkout = async (id: number, workout: Omit<Workout, 'id'>) => {
+  const updateWorkout = async (id: string, workout: Omit<Workout, 'id'>) => {
     try {
-      await updateDoc(doc(db, 'workouts', id.toString()), workout);
+      const preparedWorkout = {
+        ...workout,
+        items: workout.items.map(item => ({
+          ...item,
+          id: String(item.id),
+          itemId: String(item.itemId)
+        }))
+      };
+      await updateDoc(doc(db, 'workouts', id), preparedWorkout);
     } catch (error) {
       console.error('Error updating workout:', error);
       throw error;
     }
   };
 
-  const removeWorkout = async (id: number) => {
+  const removeWorkout = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'workouts', id.toString()));
+      await deleteDoc(doc(db, 'workouts', id));
       // Also remove any scheduled instances of this workout
       const scheduledToRemove = scheduledWorkouts.filter(sw => sw.workoutId === id);
       for (const sw of scheduledToRemove) {
@@ -359,16 +349,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Scheduled Workout functions
   const scheduleWorkout = async (workout: Omit<ScheduledWorkout, 'id'>) => {
     try {
-      await addDoc(collection(db, 'scheduledWorkouts'), workout);
+      const preparedScheduledWorkout = {
+        ...workout,
+        workoutId: String(workout.workoutId),
+        athleteId: String(workout.athleteId)
+      };
+      await addDoc(collection(db, 'scheduledWorkouts'), preparedScheduledWorkout);
     } catch (error) {
       console.error('Error scheduling workout:', error);
       throw error;
     }
   };
 
-  const removeScheduledWorkout = async (id: number) => {
+  const removeScheduledWorkout = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'scheduledWorkouts', id.toString()));
+      await deleteDoc(doc(db, 'scheduledWorkouts', id));
     } catch (error) {
       console.error('Error removing scheduled workout:', error);
       throw error;
@@ -379,25 +374,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addVideo = async (video: Omit<Video, 'id'>) => {
     try {
       const docRef = await addDoc(collection(db, 'videos'), video);
-      return Number(docRef.id);
+      return docRef.id;
     } catch (error) {
       console.error('Error adding video:', error);
       throw error;
     }
   };
 
-  const updateVideoStatus = async (id: number, status: Video['status']) => {
+  const updateVideoStatus = async (id: string, status: Video['status']) => {
     try {
-      await updateDoc(doc(db, 'videos', id.toString()), { status });
+      await updateDoc(doc(db, 'videos', id), { status });
     } catch (error) {
       console.error('Error updating video status:', error);
       throw error;
     }
   };
 
-  const removeVideo = async (id: number) => {
+  const removeVideo = async (id: string) => {
     try {
-      await deleteDoc(doc(db, 'videos', id.toString()));
+      await deleteDoc(doc(db, 'videos', id));
       // Update exercises that reference this video
       const exercisesWithVideo = exercises.filter(e => e.videoIds.includes(id));
       for (const exercise of exercisesWithVideo) {
@@ -410,11 +405,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const linkVideoToExercise = async (videoId: number, exerciseId: number) => {
+  const linkVideoToExercise = async (videoId: string, exerciseId: string) => {
     try {
       const exercise = exercises.find(e => e.id === exerciseId);
       if (exercise) {
-        const updatedVideoIds = [...new Set([...(exercise.videoIds || []), videoId])];
+        const updatedVideoIds = [...new Set([...(exercise.videoIds || []), videoId])].map(String);
         await updateExercise(exerciseId, { ...exercise, videoIds: updatedVideoIds });
       }
     } catch (error) {
@@ -423,7 +418,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const unlinkVideoFromExercise = async (videoId: number, exerciseId: number) => {
+  const unlinkVideoFromExercise = async (videoId: string, exerciseId: string) => {
     try {
       const exercise = exercises.find(e => e.id === exerciseId);
       if (exercise) {
@@ -435,6 +430,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
   };
+
   // Progress tracking functions
   const updateProgress = async (newProgress: Partial<ExerciseProgress>) => {
     try {
@@ -478,14 +474,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const getProgress = (exerciseId: number, scheduledWorkoutId: number): ExerciseProgress | undefined => {
+  const getProgress = (exerciseId: string, scheduledWorkoutId: string): ExerciseProgress | undefined => {
     return progress.find(p => 
       p.exerciseId === exerciseId && 
       p.scheduledWorkoutId === scheduledWorkoutId
     );
   };
 
-  const getAthleteStats = (athleteId: number, dateRange?: { start: string; end: string }) => {
+  const getAthleteStats = (athleteId: string, dateRange?: { start: string; end: string }) => {
     const athleteProgress = progress.filter(p => {
       const progressDate = new Date(p.date);
       if (dateRange) {

@@ -5,13 +5,13 @@ import { Play, Plus, Trash } from 'lucide-react';
 import { useStore } from '@/store';
 
 interface VideoSelectorProps {
-  exerciseId: number;
-  selectedVideoIds: number[];
-  onVideoSelect: (videoId: number) => void;
+  exerciseId: string;
+  selectedVideoIds: string[];
+  onVideoSelect: (videoId: string) => void;
 }
 
 const VideoSelector: React.FC<VideoSelectorProps> = ({ 
-  exerciseId,  // We'll use this instead of selectedVideoIds
+  exerciseId,
   selectedVideoIds, 
   onVideoSelect 
 }) => {
