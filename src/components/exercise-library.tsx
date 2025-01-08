@@ -125,9 +125,9 @@ const ExerciseLibrary = () => {
   };
 
   return (
-    <div>
+    <div className="mx-auto max-w-full">
       <div className="bg-[#242526] rounded-xl shadow-lg p-3 md:p-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 md:gap-0">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <h2 className="text-xl md:text-2xl font-bold text-white">Baseball/Softball Drills</h2>
           <button 
             onClick={() => setShowAddForm(true)}
@@ -141,7 +141,7 @@ const ExerciseLibrary = () => {
         {showAddForm && (
           <div className="mb-6 p-3 md:p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]">
             <form onSubmit={handleAddExercise}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="flex flex-col gap-4">
                 <input
                   placeholder="Drill name"
                   value={newExercise.name}
@@ -163,12 +163,12 @@ const ExerciseLibrary = () => {
                   placeholder="Drill description and instructions"
                   value={newExercise.description}
                   onChange={(e) => setNewExercise({...newExercise, description: e.target.value})}
-                  className="p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white md:col-span-2 focus:border-[#00A3E0] focus:outline-none transition-colors"
+                  className="p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
                   rows={3}
                   required
                 />
 
-                <div className="md:col-span-2">
+                <div>
                   <VideoSelector
                     exerciseId="-1"
                     selectedVideoIds={newExercise.videoIds}
@@ -183,17 +183,17 @@ const ExerciseLibrary = () => {
                   />
                 </div>
               </div>
-              <div className="flex flex-col md:flex-row justify-end gap-2">
+              <div className="flex flex-col-reverse md:flex-row justify-end gap-3 mt-4">
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
-                  className="w-full md:w-auto px-4 py-2 border border-[#3A3B3C] rounded hover:bg-[#3A3B3C] text-white transition-colors order-2 md:order-1"
+                  className="w-full md:w-auto px-4 py-2 border border-[#3A3B3C] rounded hover:bg-[#3A3B3C] text-white transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-full md:w-auto px-4 py-2 bg-[#00A3E0] text-white rounded hover:bg-[#0077A3] transition-colors order-1 md:order-2"
+                  className="w-full md:w-auto px-4 py-2 bg-[#00A3E0] text-white rounded hover:bg-[#0077A3] transition-colors"
                 >
                   Add Drill
                 </button>
@@ -202,9 +202,9 @@ const ExerciseLibrary = () => {
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               placeholder="Search drills..."
               value={searchTerm}
@@ -212,12 +212,12 @@ const ExerciseLibrary = () => {
               className="pl-10 p-2 w-full bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+          <div className="flex flex-col md:flex-row gap-2 md:flex-wrap">
             {categories.map(category => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded whitespace-nowrap transition-colors ${
+                className={`px-4 py-2 rounded text-center transition-colors ${
                   selectedCategory === category 
                     ? 'bg-[#00A3E0] text-white' 
                     : 'border border-[#3A3B3C] text-white hover:bg-[#3A3B3C]'
@@ -229,12 +229,12 @@ const ExerciseLibrary = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {filteredExercises.map((exercise) => (
             <div key={exercise.id} className="border border-[#3A3B3C] rounded-lg overflow-hidden bg-[#18191A]">
               <div className="p-3 md:p-4">
                 {editingId === exercise.id ? (
-                  <div className="space-y-3">
+                  <div className="flex flex-col gap-3">
                     <input
                       type="text"
                       value={editForm.name}
@@ -271,13 +271,13 @@ const ExerciseLibrary = () => {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={cancelEdit}
-                        className="text-gray-400 hover:text-white transition-colors"
+                        className="text-gray-400 hover:text-white transition-colors p-2"
                       >
                         <X className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => saveEdit(exercise.id)}
-                        className="text-[#00A3E0] hover:text-[#0077A3] transition-colors"
+                        className="text-[#00A3E0] hover:text-[#0077A3] transition-colors p-2"
                       >
                         <Check className="w-4 h-4" />
                       </button>
@@ -285,27 +285,27 @@ const ExerciseLibrary = () => {
                   </div>
                 ) : (
                   <div>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-base md:text-lg font-semibold text-white">{exercise.name}</h3>
-                        <span className="text-sm text-gray-300">{exercise.category}</span>
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-white text-base truncate">{exercise.name}</h3>
+                        <span className="text-sm text-gray-300 block">{exercise.category}</span>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-shrink-0">
                         <button 
                           onClick={() => startEdit(exercise)}
-                          className="text-[#00A3E0] hover:text-[#0077A3] transition-colors"
+                          className="text-[#00A3E0] hover:text-[#0077A3] transition-colors p-2"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => handleDelete(exercise.id)}
-                          className="text-red-500 hover:text-red-600 transition-colors"
+                          className="text-red-500 hover:text-red-600 transition-colors p-2"
                         >
                           <Trash className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-300 mt-2">{exercise.description}</p>
+                    <p className="text-sm text-gray-300 mt-2 line-clamp-3">{exercise.description}</p>
                     {exercise.videoIds && exercise.videoIds.length > 0 && (
                       <div className="mt-2 flex items-center text-[#00A3E0]">
                         <Video className="w-4 h-4 mr-1" />
