@@ -23,7 +23,6 @@ const VideoUpload = () => {
       return;
     }
 
-    // Parse the video URL
     const { type, videoId } = parseVideoUrl(videoUrl);
     
     if (!type || !videoId) {
@@ -57,16 +56,15 @@ const VideoUpload = () => {
     }
   };
 
-  // Get exercise name for a video
   const getExerciseName = (videoId: string) => {
     const exercise = exercises.find(e => e.videoIds?.includes(videoId));
     return exercise ? exercise.name : 'Unassigned';
   };
 
   return (
-    <div>
-      <div className="bg-[#242526] rounded-xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-6 text-white">Video Management</h2>
+    <div className="mx-auto max-w-full">
+      <div className="bg-[#242526] rounded-xl shadow-lg p-3 md:p-6">
+        <h2 className="text-xl md:text-2xl font-bold mb-6 text-white">Video Management</h2>
         
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -103,7 +101,7 @@ const VideoUpload = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Video URL (YouTube or Vimeo):
+              Video URL:
             </label>
             <input
               type="url"
@@ -126,7 +124,7 @@ const VideoUpload = () => {
 
           <button
             type="submit"
-            className="w-full bg-[#00A3E0] text-white p-2 rounded-lg hover:bg-[#0077A3] transition-colors"
+            className="w-full md:w-auto bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
           >
             Add Video
           </button>
@@ -135,11 +133,11 @@ const VideoUpload = () => {
         {completedVideos.length > 0 && (
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">Video Library</h3>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {completedVideos.map(video => (
                 <div key={video.id} className="border border-[#3A3B3C] rounded-lg p-4 bg-[#18191A]">
-                  <div className="flex gap-4">
-                    <div className="relative w-40 h-24 flex-shrink-0">
+                  <div className="flex flex-col gap-4">
+                    <div className="relative aspect-video w-full">
                       <img
                         src={video.thumbnail}
                         alt={video.title}
@@ -147,26 +145,28 @@ const VideoUpload = () => {
                       />
                       <button 
                         onClick={() => window.open(video.url, '_blank')}
-                        className="absolute inset-0 m-auto w-10 h-10 rounded-full bg-black bg-opacity-50 flex items-center justify-center text-white"
+                        className="absolute inset-0 m-auto w-10 h-10 rounded-full bg-black bg-opacity-50 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity"
                       >
                         <Play className="w-4 h-4" />
                       </button>
                     </div>
                     
-                    <div className="flex-1">
+                    <div>
                       <div className="flex justify-between items-start">
-                        <div>
-                          <div className="font-medium text-white">{video.title}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-white truncate">
+                            {video.title}
+                          </div>
                           <div className="text-sm text-gray-400">
                             Assigned to: {getExerciseName(video.id)}
                           </div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-gray-400 mt-1">
                             Platform: {video.type.charAt(0).toUpperCase() + video.type.slice(1)}
                           </div>
                         </div>
                         <button 
                           onClick={() => removeVideo(video.id)}
-                          className="text-gray-400 hover:text-white transition-colors"
+                          className="text-gray-400 hover:text-white transition-colors p-2 ml-2 flex-shrink-0"
                         >
                           <X className="w-4 h-4" />
                         </button>

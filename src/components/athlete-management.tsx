@@ -53,13 +53,13 @@ const AthleteManagement = () => {
   };
 
   return (
-    <div>
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-black">Athletes</h2>
+    <div className="mx-auto max-w-full">
+      <div className="bg-[#242526] rounded-xl shadow-lg p-3 md:p-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <h2 className="text-xl md:text-2xl font-bold text-white">Athletes</h2>
           <button 
             onClick={() => setShowAddForm(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center"
+            className="w-full md:w-auto bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] flex items-center justify-center transition-colors"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Athlete
@@ -67,49 +67,49 @@ const AthleteManagement = () => {
         </div>
 
         {showAddForm && (
-          <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+          <div className="mb-6 p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]">
             <form onSubmit={handleAddAthlete}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-black mb-1">Name</label>
+                  <label className="block text-white mb-1">Name</label>
                   <input
                     type="text"
                     value={newAthlete.name}
                     onChange={(e) => setNewAthlete({...newAthlete, name: e.target.value})}
-                    className="w-full p-2 border rounded text-black"
+                    className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-black mb-1">Position</label>
+                  <label className="block text-white mb-1">Position</label>
                   <input
                     type="text"
                     value={newAthlete.position}
                     onChange={(e) => setNewAthlete({...newAthlete, position: e.target.value})}
-                    className="w-full p-2 border rounded text-black"
+                    className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-black mb-1">Notes</label>
+                  <label className="block text-white mb-1">Notes</label>
                   <textarea
                     value={newAthlete.notes}
                     onChange={(e) => setNewAthlete({...newAthlete, notes: e.target.value})}
-                    className="w-full p-2 border rounded text-black"
+                    className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
                     rows={3}
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 mt-4">
+              <div className="flex flex-col-reverse md:flex-row justify-end gap-3 mt-4">
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
-                  className="px-4 py-2 border rounded hover:bg-gray-50 text-black"
+                  className="w-full md:w-auto px-4 py-2 border border-[#3A3B3C] rounded-lg hover:bg-[#3A3B3C] text-white transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  className="w-full md:w-auto bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
                 >
                   Add Athlete
                 </button>
@@ -120,77 +120,81 @@ const AthleteManagement = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {athletes.map(athlete => (
-            <div key={athlete.id} className="border rounded-lg p-4">
+            <div key={athlete.id} className="border border-[#3A3B3C] rounded-lg p-4 bg-[#18191A]">
               {editingId === athlete.id ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-black mb-1">Name</label>
+                    <label className="block text-white mb-1">Name</label>
                     <input
                       type="text"
                       value={editForm.name}
                       onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      className="w-full p-2 border rounded text-black"
+                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-black mb-1">Position</label>
+                    <label className="block text-white mb-1">Position</label>
                     <input
                       type="text"
                       value={editForm.position}
                       onChange={(e) => setEditForm({ ...editForm, position: e.target.value })}
-                      className="w-full p-2 border rounded text-black"
+                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
                     />
                   </div>
                   <div>
-                    <label className="block text-black mb-1">Notes</label>
+                    <label className="block text-white mb-1">Notes</label>
                     <textarea
                       value={editForm.notes}
                       onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                      className="w-full p-2 border rounded text-black"
+                      className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
                       rows={3}
                     />
                   </div>
-                  <div className="flex justify-end gap-2">
+                  <div className="flex flex-col-reverse md:flex-row justify-end gap-3">
                     <button
                       onClick={cancelEdit}
-                      className="text-gray-500 hover:text-gray-700"
+                      className="w-full md:w-auto px-4 py-2 border border-[#3A3B3C] rounded-lg hover:bg-[#3A3B3C] text-white transition-colors"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-4 h-4 md:mr-2 mx-auto md:mx-0" />
+                      <span className="hidden md:inline">Cancel</span>
                     </button>
                     <button
                       onClick={() => handleEditSave(athlete.id)}
-                      className="text-green-500 hover:text-green-700"
+                      className="w-full md:w-auto bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
                     >
-                      <Check className="w-4 h-4" />
+                      <Check className="w-4 h-4 md:mr-2 mx-auto md:mx-0" />
+                      <span className="hidden md:inline">Save Changes</span>
                     </button>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-semibold text-black">{athlete.name}</h3>
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-white text-base md:text-lg truncate">
+                        {athlete.name}
+                      </h3>
                       {athlete.position && (
-                        <span className="text-sm text-black">{athlete.position}</span>
+                        <span className="text-sm text-gray-300 block">{athlete.position}</span>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-shrink-0">
                       <button 
                         onClick={() => startEdit(athlete)}
-                        className="text-blue-500 hover:text-blue-600"
+                        className="text-[#00A3E0] hover:text-[#0077A3] transition-colors p-2"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => removeAthlete(athlete.id)}
-                        className="text-red-500 hover:text-red-600"
+                        className="text-red-500 hover:text-red-600 transition-colors p-2"
                       >
                         <Trash className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                   {athlete.notes && (
-                    <p className="text-sm text-black mt-2">{athlete.notes}</p>
+                    <p className="text-sm text-gray-300 mt-3 line-clamp-3">{athlete.notes}</p>
                   )}
                 </>
               )}
@@ -198,7 +202,7 @@ const AthleteManagement = () => {
           ))}
           
           {athletes.length === 0 && !showAddForm && (
-            <div className="col-span-2 text-center py-8 text-black">
+            <div className="col-span-1 md:col-span-2 text-center py-8 text-gray-400">
               No athletes added yet. Click "Add Athlete" to get started.
             </div>
           )}
