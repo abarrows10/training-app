@@ -137,25 +137,25 @@ const SequenceBuilder = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="mx-auto max-w-full">
+      <div className="bg-[#242526] rounded-xl shadow-lg p-3 md:p-6">
         {/* New Sequence Builder */}
         {!editingId && (
           <>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-black mb-2">Drill Sequence Builder</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Drill Sequence Builder</h2>
                 <input
                   type="text"
                   placeholder="Sequence Name (e.g., Basic Hitting Sequence)"
                   value={sequence.name}
                   onChange={(e) => setSequence(prev => ({ ...prev, name: e.target.value }))}
-                  className="p-2 border rounded text-black w-full md:w-96"
+                  className="w-full p-2 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
                 />
               </div>
               <button 
                 onClick={addDrill}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center"
+                className="w-full md:w-auto bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] flex items-center justify-center transition-colors"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Drill
@@ -166,21 +166,21 @@ const SequenceBuilder = () => {
               {sequence.drills.map((drill, index) => (
                 <div 
                   key={drill.id}
-                  className="p-4 border rounded-lg bg-gray-50"
+                  className="p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]"
                 >
                   <div className="flex flex-col md:flex-row gap-4 items-center">
-                    <div className="flex md:flex-col gap-2">
+                    <div className="flex md:flex-col gap-2 flex-shrink-0">
                       <button
                         onClick={() => moveDrill(index, 'up')}
                         disabled={index === 0}
-                        className={`text-gray-500 hover:text-gray-700 ${index === 0 ? 'opacity-50' : ''}`}
+                        className={`text-gray-400 hover:text-white transition-colors ${index === 0 ? 'opacity-50' : ''}`}
                       >
                         <ArrowUp className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => moveDrill(index, 'down')}
                         disabled={index === sequence.drills.length - 1}
-                        className={`text-gray-500 hover:text-gray-700 ${
+                        className={`text-gray-400 hover:text-white transition-colors ${
                           index === sequence.drills.length - 1 ? 'opacity-50' : ''
                         }`}
                       >
@@ -188,40 +188,42 @@ const SequenceBuilder = () => {
                       </button>
                     </div>
 
-                    <select
-                      value={drill.exerciseId}
-                      onChange={(e) => updateDrill(index, { exerciseId: e.target.value })}
-                      className="flex-1 p-2 border rounded text-black"
-                    >
-                      <option value="">Select a drill...</option>
-                      {exercises.map(exercise => (
-                        <option key={exercise.id} value={exercise.id}>
-                          {exercise.name} ({exercise.category})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                      <select
+                        value={drill.exerciseId}
+                        onChange={(e) => updateDrill(index, { exerciseId: e.target.value })}
+                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                      >
+                        <option value="">Select a drill...</option>
+                        {exercises.map(exercise => (
+                          <option key={exercise.id} value={exercise.id}>
+                            {exercise.name} ({exercise.category})
+                          </option>
+                        ))}
+                      </select>
 
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Sets"
-                      value={drill.sets || ''}
-                      onChange={(e) => updateDrill(index, { sets: Number(e.target.value) })}
-                      className="w-20 p-2 border rounded text-black"
-                    />
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Sets"
+                        value={drill.sets || ''}
+                        onChange={(e) => updateDrill(index, { sets: Number(e.target.value) })}
+                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                      />
 
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Reps"
-                      value={drill.reps || ''}
-                      onChange={(e) => updateDrill(index, { reps: Number(e.target.value) })}
-                      className="w-20 p-2 border rounded text-black"
-                    />
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Reps"
+                        value={drill.reps || ''}
+                        onChange={(e) => updateDrill(index, { reps: Number(e.target.value) })}
+                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                      />
+                    </div>
                     
                     <button
                       onClick={() => removeDrill(index)}
-                      className="text-red-500 hover:text-red-600"
+                      className="text-red-500 hover:text-red-600 transition-colors flex-shrink-0"
                     >
                       <Trash className="w-4 h-4" />
                     </button>
@@ -230,7 +232,7 @@ const SequenceBuilder = () => {
               ))}
 
               {sequence.drills.length === 0 && (
-                <div className="text-center py-8 text-black">
+                <div className="text-center py-8 text-gray-400">
                   Click "Add Drill" to start building your sequence
                 </div>
               )}
@@ -239,7 +241,7 @@ const SequenceBuilder = () => {
             <div className="mt-6 flex justify-end">
               <button 
                 onClick={handleSave}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center"
+                className="bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] flex items-center transition-colors"
               >
                 <Save className="w-4 h-4 mr-2" />
                 Save Sequence
@@ -251,19 +253,19 @@ const SequenceBuilder = () => {
         {/* Edit Form */}
         {editingId && (
           <>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-black mb-2">Edit Sequence</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Edit Sequence</h2>
                 <input
                   type="text"
                   value={editSequence.name}
                   onChange={(e) => setEditSequence(prev => ({ ...prev, name: e.target.value }))}
-                  className="p-2 border rounded text-black w-full md:w-96"
+                  className="w-full p-2 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
                 />
               </div>
               <button 
                 onClick={addDrillToEdit}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex items-center"
+                className="w-full md:w-auto bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] flex items-center justify-center transition-colors"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Drill
@@ -274,21 +276,21 @@ const SequenceBuilder = () => {
               {editSequence.drills.map((drill, index) => (
                 <div 
                   key={drill.id}
-                  className="p-4 border rounded-lg bg-gray-50"
+                  className="p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]"
                 >
                   <div className="flex flex-col md:flex-row gap-4 items-center">
-                    <div className="flex md:flex-col gap-2">
+                    <div className="flex md:flex-col gap-2 flex-shrink-0">
                       <button
                         onClick={() => moveDrill(index, 'up', true)}
                         disabled={index === 0}
-                        className={`text-gray-500 hover:text-gray-700 ${index === 0 ? 'opacity-50' : ''}`}
+                        className={`text-gray-400 hover:text-white transition-colors ${index === 0 ? 'opacity-50' : ''}`}
                       >
                         <ArrowUp className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => moveDrill(index, 'down', true)}
                         disabled={index === editSequence.drills.length - 1}
-                        className={`text-gray-500 hover:text-gray-700 ${
+                        className={`text-gray-400 hover:text-white transition-colors ${
                           index === editSequence.drills.length - 1 ? 'opacity-50' : ''
                         }`}
                       >
@@ -296,40 +298,42 @@ const SequenceBuilder = () => {
                       </button>
                     </div>
 
-                    <select
-                      value={drill.exerciseId}
-                      onChange={(e) => updateEditDrill(index, { exerciseId: e.target.value })}
-                      className="flex-1 p-2 border rounded text-black"
-                    >
-                      <option value="">Select a drill...</option>
-                      {exercises.map(exercise => (
-                        <option key={exercise.id} value={exercise.id}>
-                          {exercise.name} ({exercise.category})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                      <select
+                        value={drill.exerciseId}
+                        onChange={(e) => updateEditDrill(index, { exerciseId: e.target.value })}
+                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                      >
+                        <option value="">Select a drill...</option>
+                        {exercises.map(exercise => (
+                          <option key={exercise.id} value={exercise.id}>
+                            {exercise.name} ({exercise.category})
+                          </option>
+                        ))}
+                      </select>
 
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Sets"
-                      value={drill.sets || ''}
-                      onChange={(e) => updateEditDrill(index, { sets: Number(e.target.value) })}
-                      className="w-20 p-2 border rounded text-black"
-                    />
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Sets"
+                        value={drill.sets || ''}
+                        onChange={(e) => updateEditDrill(index, { sets: Number(e.target.value) })}
+                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                      />
 
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Reps"
-                      value={drill.reps || ''}
-                      onChange={(e) => updateEditDrill(index, { reps: Number(e.target.value) })}
-                      className="w-20 p-2 border rounded text-black"
-                    />
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Reps"
+                        value={drill.reps || ''}
+                        onChange={(e) => updateEditDrill(index, { reps: Number(e.target.value) })}
+                        className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                      />
+                    </div>
                     
                     <button
                       onClick={() => removeEditDrill(index)}
-                      className="text-red-500 hover:text-red-600"
+                      className="text-red-500 hover:text-red-600 transition-colors flex-shrink-0"
                     >
                       <Trash className="w-4 h-4" />
                     </button>
@@ -338,17 +342,17 @@ const SequenceBuilder = () => {
               ))}
             </div>
 
-            <div className="mt-6 flex justify-end gap-2">
+            <div className="mt-6 flex flex-col md:flex-row justify-end gap-3">
               <button
                 onClick={cancelEdit}
-                className="px-4 py-2 border rounded hover:bg-gray-50 text-black flex items-center"
+                className="w-full md:w-auto px-4 py-2 border border-[#3A3B3C] rounded-lg hover:bg-[#3A3B3C] text-white flex items-center justify-center transition-colors"
               >
                 <X className="w-4 h-4 mr-2" />
                 Cancel
               </button>
               <button 
                 onClick={() => handleEditSave(editingId)}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center"
+                className="w-full md:w-auto bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] flex items-center justify-center transition-colors"
               >
                 <Check className="w-4 h-4 mr-2" />
                 Save Changes
@@ -359,33 +363,33 @@ const SequenceBuilder = () => {
 
         {/* Saved Sequences List */}
         {sequences.length > 0 && !editingId && (
-          <div className="mt-8 border-t pt-6">
-            <h3 className="text-xl font-bold text-black mb-4">Saved Sequences</h3>
+          <div className="mt-8 border-t border-[#3A3B3C] pt-6">
+            <h3 className="text-lg font-bold text-white mb-4">Saved Sequences</h3>
             <div className="space-y-4">
               {sequences.map(savedSequence => (
-                <div key={savedSequence.id} className="border rounded-lg p-4">
+                <div key={savedSequence.id} className="border border-[#3A3B3C] rounded-lg p-4 bg-[#18191A]">
                   <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-bold text-black">{savedSequence.name}</h4>
+                    <h4 className="font-bold text-white">{savedSequence.name}</h4>
                     <div className="flex gap-2">
                       <button 
                         onClick={() => startEdit(savedSequence)}
-                        className="text-blue-500 hover:text-blue-600"
+                        className="text-[#00A3E0] hover:text-[#0077A3] transition-colors"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => removeSequence(savedSequence.id)}
-                        className="text-red-500 hover:text-red-600"
+                        className="text-red-500 hover:text-red-600 transition-colors"
                       >
                         <Trash className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-                  <ul className="list-disc list-inside text-black">
+                  <ul className="list-disc list-inside text-gray-300">
                     {savedSequence.drills.map((drill, index) => {
                       const exercise = exercises.find(e => e.id === drill.exerciseId);
                       return (
-                        <li key={index} className="text-black">
+                        <li key={index} className="text-gray-300">
                           {exercise?.name || 'Unknown Exercise'}
                           {drill.sets && drill.reps && ` (${drill.sets} sets × ${drill.reps} reps)`}
                         </li>
