@@ -11,6 +11,8 @@ export const parseVideoUrl = (url: string): { type: 'youtube' | 'vimeo' | null; 
         videoId = url.split('youtu.be/')[1].split('?')[0];
       } else if (url.includes('youtube.com/shorts/')) {
         videoId = url.split('shorts/')[1].split('?')[0];
+      } else if (url.includes('youtube.com/embed/')) {
+        videoId = url.split('embed/')[1].split('?')[0];
       } else {
         return { type: null, videoId: null };
       }
@@ -34,8 +36,6 @@ export const getVideoThumbnail = (type: 'youtube' | 'vimeo', videoId: string): s
   if (type === 'youtube') {
     return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
   } else if (type === 'vimeo') {
-    // Note: Vimeo thumbnails require API access for better handling
-    // For now, we'll use a placeholder
     return '/api/placeholder/320/180';
   }
   return '/api/placeholder/320/180';
@@ -45,7 +45,9 @@ export const getEmbedUrl = (type: 'youtube' | 'vimeo', videoId: string): string 
   if (type === 'youtube') {
     return `https://www.youtube.com/embed/${videoId}`;
   } else if (type === 'vimeo') {
-    return `https://player.vimeo.com/video/${videoId}`;
+    // Remove any additional parameters from videoId
+    const cleanVideoId = videoId.split('/')[0];
+    return `https://player.vimeo.com/video/${cleanVideoId}`;
   }
   return '';
 };
