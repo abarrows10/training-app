@@ -41,13 +41,12 @@ export const getVideoThumbnail = (type: 'youtube' | 'vimeo', videoId: string): s
   return '/api/placeholder/320/180';
 };
 
+// In getEmbedUrl in videoUtils.ts
 export const getEmbedUrl = (type: 'youtube' | 'vimeo', videoId: string): string => {
   if (type === 'youtube') {
     return `https://www.youtube.com/embed/${videoId}`;
   } else if (type === 'vimeo') {
-    // Remove any additional parameters from videoId
-    const cleanVideoId = videoId.split('/')[0];
-    return `https://player.vimeo.com/video/${cleanVideoId}`;
+    return `https://player.vimeo.com/video/${videoId}?dnt=1`;
   }
   return '';
 };
