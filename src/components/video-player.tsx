@@ -16,9 +16,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, title }) => {
   useEffect(() => {
     if (!url || url === 'null') return;
 
-    const { type, videoId } = parseVideoUrl(url);
-    if (type && videoId) {
-      setEmbedUrl(getEmbedUrl(type, videoId));
+    try {
+      const { type, videoId } = parseVideoUrl(url);
+      if (type && videoId) {
+        const baseUrl = type === 'vimeo' ? url : getEmbedUrl(type, videoId);
+        setEmbedUrl(baseUrl.replace('vimeo.com', 'player.vimeo.com/video'));
+      }
+    } catch (err) {
+      setError(true);
     }
   }, [url]);
 
