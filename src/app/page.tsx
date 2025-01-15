@@ -21,8 +21,8 @@ export default function Home() {
     Athletes
   </Link>
   <Link
-    href="/coach/analysis"
-    className="block w-full p-4 text-center bg-[#18191A] text-white font-bold rounded-lg hover:bg-[#3A3B3C] transition-colors"
+    href="/coach/video-analysis"
+    className="block w-full p-4 text-center bg-[#00A3E0] text-white font-bold rounded-lg hover:bg-[#0077A3] transition-colors"
   >
     Video Analysis
   </Link>
