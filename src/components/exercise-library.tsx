@@ -212,21 +212,37 @@ const ExerciseLibrary = () => {
               className="pl-10 p-2 w-full bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
             />
           </div>
-          <div className="flex flex-col md:flex-row gap-2 md:flex-wrap">
-            {categories.map(category => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded text-center transition-colors ${
-                  selectedCategory === category 
-                    ? 'bg-[#00A3E0] text-white' 
-                    : 'border border-[#3A3B3C] text-white hover:bg-[#3A3B3C]'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
+          <div className="flex flex-col gap-4">
+  {/* Mobile Dropdown */}
+  <select
+    value={selectedCategory}
+    onChange={(e) => setSelectedCategory(e.target.value)}
+    className="md:hidden w-full p-2 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+  >
+    {categories.map(category => (
+      <option key={category} value={category} className="bg-[#242526]">
+        {category}
+      </option>
+    ))}
+  </select>
+
+  {/* Desktop Category Buttons */}
+  <div className="hidden md:flex flex-row gap-2 flex-wrap">
+    {categories.map(category => (
+      <button
+        key={category}
+        onClick={() => setSelectedCategory(category)}
+        className={`px-4 py-2 rounded text-center transition-colors ${
+          selectedCategory === category 
+            ? 'bg-[#00A3E0] text-white' 
+            : 'border border-[#3A3B3C] text-white hover:bg-[#3A3B3C]'
+        }`}
+      >
+        {category}
+      </button>
+    ))}
+  </div>
+</div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
