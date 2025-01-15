@@ -67,70 +67,72 @@ const VideoControls: React.FC<VideoControlsProps> = ({ videoRef, onFrameStep }) 
   };
 
   return (
-    <div className="bg-black/50 backdrop-blur-sm px-4 py-2">
-      {/* Frame counter */}
-      <div className="text-white text-xs mb-1">
-        {currentTime.toFixed(3)}
-      </div>
-
-      {/* Tick marks and progress */}
-      <div className="relative h-6 mb-2">
-        <div className="absolute inset-0 flex items-center">
-          {Array.from({ length: 30 }).map((_, i) => (
-            <div
-              key={i}
-              className={`flex-1 h-2 ${i % 5 === 0 ? 'bg-white' : 'bg-gray-600'}`}
-              style={{ margin: '0 1px' }}
-            />
-          ))}
+    <div className="bg-black/50 backdrop-blur-sm px-4 py-3">
+      {/* Scrubber and Frame Counter */}
+      <div className="relative mb-3">
+        <div className="absolute -top-6 text-white text-sm px-2 py-0.5 bg-black/70 rounded"
+             style={{ left: `${(currentTime / duration) * 100}%`, transform: 'translateX(-50%)' }}>
+          {currentTime.toFixed(3)}
         </div>
-        <input
-          type="range"
-          min="0"
-          max={duration}
-          value={currentTime}
-          onChange={(e) => {
-            const video = videoRef.current;
-            if (!video) return;
-            video.currentTime = Number(e.target.value);
-          }}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-        />
+        
+        <div className="relative h-8">
+          <div className="absolute inset-0 flex items-center">
+            {Array.from({ length: 30 }).map((_, i) => (
+              <div
+                key={i}
+                className={`flex-1 h-4 ${i % 5 === 0 ? 'bg-white' : 'bg-gray-600'}`}
+                style={{ margin: '0 1px' }}
+              />
+            ))}
+          </div>
+          <input
+            type="range"
+            min="0"
+            max={duration}
+            value={currentTime}
+            onChange={(e) => {
+              const video = videoRef.current;
+              if (!video) return;
+              video.currentTime = Number(e.target.value);
+            }}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          />
+        </div>
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-2">
         <button 
           onClick={togglePlaybackRate}
-          className="text-white text-xs px-2 py-1"
+          className="text-white text-sm px-3 py-1"
         >
           {playbackRate}x
         </button>
 
         <button 
           onClick={() => {}}
-          className="text-white p-1"
+          className="text-white p-2"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="w-6 h-6" />
         </button>
 
         <button
           onClick={() => stepFrame('backward')}
-          className="text-white text-lg px-2"
+          className="text-white text-2xl px-4 py-2"
         >
           ⋘
         </button>
 
         <button
           onClick={togglePlay}
-          className="text-white p-1"
+          className="text-white p-2"
         >
-          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          {isPlaying ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8" />}
         </button>
 
         <button
           onClick={() => stepFrame('forward')}
-          className="text-white text-lg px-2"
+          className="text-white text-2xl px-4 py-2"
         >
           ⋙
         </button>

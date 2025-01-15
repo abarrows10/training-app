@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { X, MoreVertical, Link } from 'lucide-react';
+import { Link } from 'lucide-react';
 import VideoAnalysisUploader from './VideoAnalysisUploader';
 import VideoControls from './VideoControls';
 
@@ -28,35 +28,24 @@ const SplitPlayer = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col">
-      {/* Header */}
-      <div className="flex justify-between items-center p-4 bg-black/50">
-        <button className="text-white">
-          <X className="w-6 h-6" />
-        </button>
-        <div className="flex flex-col items-center">
-          <span className="text-white text-lg">COMPARE</span>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setIsLinked(!isLinked)}
-              className={`text-sm px-2 py-1 rounded ${
-                isLinked ? 'text-yellow-400' : 'text-white'
-              }`}
-            >
-              <Link className="w-4 h-4" />
-            </button>
+    <div className="flex-1 relative">
+      {/* Link Status Overlay */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center">
+        <div className="bg-black/50 backdrop-blur-sm rounded px-3 py-1">
+          <button 
+            onClick={() => setIsLinked(!isLinked)}
+            className="flex items-center gap-2"
+          >
+            <Link className={`w-4 h-4 ${isLinked ? 'text-yellow-400' : 'text-white'}`} />
             <span className={`text-sm ${isLinked ? 'text-yellow-400' : 'text-white'}`}>
               {isLinked ? 'LINKED' : 'LINK'}
             </span>
-          </div>
+          </button>
         </div>
-        <button className="text-white">
-          <MoreVertical className="w-6 h-6" />
-        </button>
       </div>
 
       {/* Videos Container */}
-      <div className="flex-1 flex flex-col landscape:flex-row">
+      <div className="h-full flex flex-col landscape:flex-row">
         <div className="flex-1">
           {!leftVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'left')} side="left" />
@@ -65,7 +54,7 @@ const SplitPlayer = () => {
               <video
                 ref={leftVideoRef}
                 src={leftVideo.url}
-                className="absolute inset-0 w-full h-full object-contain"
+                className="absolute inset-0 w-full h-full object-contain bg-black"
               />
               <div className="absolute bottom-0 left-0 right-0">
                 <VideoControls videoRef={leftVideoRef} />
@@ -82,7 +71,7 @@ const SplitPlayer = () => {
               <video
                 ref={rightVideoRef}
                 src={rightVideo.url}
-                className="absolute inset-0 w-full h-full object-contain"
+                className="absolute inset-0 w-full h-full object-contain bg-black"
               />
               <div className="absolute bottom-0 left-0 right-0">
                 <VideoControls videoRef={rightVideoRef} />
