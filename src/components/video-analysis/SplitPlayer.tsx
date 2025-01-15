@@ -28,9 +28,9 @@ const SplitPlayer = () => {
   };
 
   return (
-    <div className="flex-1 relative">
+    <div className="fixed inset-0 bg-black">
       {/* Link Status Overlay */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
         <div className="bg-black/50 backdrop-blur-sm rounded px-3 py-1">
           <button 
             onClick={() => setIsLinked(!isLinked)}
@@ -45,35 +45,35 @@ const SplitPlayer = () => {
       </div>
 
       {/* Videos Container */}
-      <div className="h-full flex flex-col landscape:flex-row">
-        <div className="flex-1">
+      <div className="h-screen flex flex-row">
+        <div className="flex-1 relative">
           {!leftVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'left')} side="left" />
           ) : (
-            <div className="relative h-full">
+            <div className="h-full relative">
               <video
                 ref={leftVideoRef}
                 src={leftVideo.url}
-                className="absolute inset-0 w-full h-full object-contain bg-black"
+                className="absolute inset-0 w-full h-full object-contain"
               />
-              <div className="absolute bottom-0 left-0 right-0">
+              <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={leftVideoRef} />
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 relative">
           {!rightVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'right')} side="right" />
           ) : (
-            <div className="relative h-full">
+            <div className="h-full relative">
               <video
                 ref={rightVideoRef}
                 src={rightVideo.url}
-                className="absolute inset-0 w-full h-full object-contain bg-black"
+                className="absolute inset-0 w-full h-full object-contain"
               />
-              <div className="absolute bottom-0 left-0 right-0">
+              <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={rightVideoRef} />
               </div>
             </div>

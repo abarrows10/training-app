@@ -52,7 +52,7 @@ export default function CoachLayout({
       <nav className={`
         fixed lg:static w-72 bg-[#242526] min-h-screen p-6 z-40
         transition-transform duration-300 ease-in-out
-        ${isNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${isNavOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <Link 
           href="/" 
@@ -84,7 +84,7 @@ export default function CoachLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 lg:p-8 mt-12 lg:mt-0">
+      <main className="flex-1 p-4 mt-12">
         {children}
       </main>
     </div>
