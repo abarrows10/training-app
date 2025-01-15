@@ -2,6 +2,7 @@
 
 import React, { useRef } from 'react';
 import { Upload } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface VideoAnalysisUploaderProps {
   onFileSelect: (file: File) => void;
@@ -25,14 +26,24 @@ const VideoAnalysisUploader: React.FC<VideoAnalysisUploaderProps> = ({ onFileSel
   };
 
   return (
-    <div className="relative aspect-video w-full bg-[#18191A] rounded-lg border border-[#3A3B3C] overflow-hidden">
-      <button
+    <motion.div 
+      className="relative aspect-video w-full bg-[#18191A] rounded-lg border border-[#3A3B3C] overflow-hidden"
+      whileHover={{ borderColor: '#00A3E0' }}
+    >
+      <motion.button
         onClick={handleClick}
-        className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 hover:text-[#00A3E0] transition-colors"
+        className="absolute inset-0 flex flex-col items-center justify-center text-gray-400"
+        whileHover={{ color: '#00A3E0' }}
+        whileTap={{ scale: 0.98 }}
       >
-        <Upload className="w-12 h-12 mb-2" />
-        <span className="text-sm">Upload {side} video</span>
-      </button>
+        <motion.div
+          initial={{ scale: 1 }}
+          whileHover={{ scale: 1.1 }}
+        >
+          <Upload className="w-12 h-12 mb-2" />
+          <span className="text-sm">Upload {side} video</span>
+        </motion.div>
+      </motion.button>
       <input
         ref={fileInputRef}
         type="file"
@@ -40,7 +51,7 @@ const VideoAnalysisUploader: React.FC<VideoAnalysisUploaderProps> = ({ onFileSel
         onChange={handleFileChange}
         className="hidden"
       />
-    </div>
+    </motion.div>
   );
 };
 

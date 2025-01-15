@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { Link } from 'lucide-react';
 import VideoAnalysisUploader from './VideoAnalysisUploader';
 import VideoControls from './VideoControls';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface VideoState {
   file: File | null;
@@ -29,28 +30,40 @@ const SplitPlayer = () => {
 
   return (
     <div className="fixed inset-0 bg-black">
-      {/* Link Status Overlay */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-        <div className="bg-black/50 backdrop-blur-sm rounded px-3 py-1">
-          <button 
-            onClick={() => setIsLinked(!isLinked)}
-            className="flex items-center gap-2"
+      <AnimatePresence>
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-10"
+        >
+          <motion.div 
+            className="bg-black/50 backdrop-blur-sm rounded px-3 py-1"
+            whileHover={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
           >
-            <Link className={`w-4 h-4 ${isLinked ? 'text-yellow-400' : 'text-white'}`} />
-            <span className={`text-sm ${isLinked ? 'text-yellow-400' : 'text-white'}`}>
-              {isLinked ? 'LINKED' : 'LINK'}
-            </span>
-          </button>
-        </div>
-      </div>
+            <motion.button 
+              onClick={() => setIsLinked(!isLinked)}
+              className="flex items-center gap-2"
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link className={`w-4 h-4 ${isLinked ? 'text-yellow-400' : 'text-white'}`} />
+              <span className={`text-sm ${isLinked ? 'text-yellow-400' : 'text-white'}`}>
+                {isLinked ? 'LINKED' : 'LINK'}
+              </span>
+            </motion.button>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
 
-      {/* Videos Container */}
       <div className="h-screen flex flex-row">
         <div className="flex-1 relative">
           {!leftVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'left')} side="left" />
           ) : (
-            <div className="h-full relative">
+            <motion.div 
+              className="h-full relative"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
               <video
                 ref={leftVideoRef}
                 src={leftVideo.url}
@@ -59,7 +72,7 @@ const SplitPlayer = () => {
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={leftVideoRef} />
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
 
@@ -67,7 +80,11 @@ const SplitPlayer = () => {
           {!rightVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'right')} side="right" />
           ) : (
-            <div className="h-full relative">
+            <motion.div 
+              className="h-full relative"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
               <video
                 ref={rightVideoRef}
                 src={rightVideo.url}
@@ -76,7 +93,7 @@ const SplitPlayer = () => {
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={rightVideoRef} />
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>
