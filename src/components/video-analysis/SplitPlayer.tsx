@@ -2,10 +2,16 @@
 
 import React, { useState, useRef } from 'react';
 import VideoAnalysisUploader from './VideoAnalysisUploader';
+import VideoControls from './VideoControls';
 
 interface VideoState {
   file: File | null;
   url: string | null;
+}
+
+interface HandleFileSelectParams {
+  file: File;
+  side: 'left' | 'right';
 }
 
 const SplitPlayer = () => {
@@ -25,18 +31,20 @@ const SplitPlayer = () => {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 gap-4 max-w-[95vw] mx-auto">
       <div>
         {!leftVideo.url ? (
           <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'left')} side="left" />
         ) : (
-          <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden">
-            <video
-              ref={leftVideoRef}
-              src={leftVideo.url}
-              className="absolute inset-0 w-full h-full"
-              controls
-            />
+          <div>
+            <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden">
+              <video
+                ref={leftVideoRef}
+                src={leftVideo.url}
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+            </div>
+            <VideoControls videoRef={leftVideoRef} />
           </div>
         )}
       </div>
@@ -45,13 +53,15 @@ const SplitPlayer = () => {
         {!rightVideo.url ? (
           <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'right')} side="right" />
         ) : (
-          <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden">
-            <video
-              ref={rightVideoRef}
-              src={rightVideo.url}
-              className="absolute inset-0 w-full h-full"
-              controls
-            />
+          <div>
+            <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden">
+              <video
+                ref={rightVideoRef}
+                src={rightVideo.url}
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+            </div>
+            <VideoControls videoRef={rightVideoRef} />
           </div>
         )}
       </div>
