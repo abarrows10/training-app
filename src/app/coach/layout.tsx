@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Library, ListOrdered, Dumbbell, Users, Calendar, Upload, Home, Menu, X, LineChart } from 'lucide-react';
+import { Library, ListOrdered, Dumbbell, Users, Calendar, Upload, Home, Menu, X, LineChart, Split } from 'lucide-react';
 import { useState } from 'react';
 
 export default function CoachLayout({
@@ -21,6 +21,7 @@ export default function CoachLayout({
     { href: '/coach/assignments', label: 'Assignments', icon: Calendar },
     { href: '/coach/analytics', label: 'Analytics', icon: LineChart },
     { href: '/coach/videos', label: 'Videos', icon: Upload },
+    { href: '/coach/video-analysis', label: 'Video Analysis', icon: Split },
     
   ];
 
