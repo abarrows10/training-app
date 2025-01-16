@@ -159,7 +159,7 @@ const SplitPlayer = () => {
       {/* Drawing Tools Toggle */}
       <motion.button
         onClick={() => setShowDrawingTools(!showDrawingTools)}
-        className="fixed bottom-52 left-1/2 -translate-x-1/2 z-50 p-2 rounded-full bg-black/50 text-white"
+        className="fixed bottom-60 left-1/2 -translate-x-1/2 z-50 p-2 rounded-full bg-black/50 text-white"
         whileHover={{ scale: 1.1 }}
       >
         <Pen className={`w-6 h-6 ${showDrawingTools ? 'text-yellow-400' : 'text-white'}`} />
