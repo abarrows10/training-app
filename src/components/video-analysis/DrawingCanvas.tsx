@@ -256,7 +256,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, re
       )}
 
       {/* Drawing Tools */}
-      <div className="absolute right-4 top-4 flex flex-col gap-2">
+      <div className="absolute right-4 top-12 flex flex-col gap-2">
         <button
           onClick={() => setMode('freehand')}
           className={`p-2 rounded-full ${mode === 'freehand' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
@@ -314,7 +314,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, re
       </div>
 
       {/* Color Picker */}
-      <div className="absolute right-16 top-4 flex flex-col gap-2">
+      <div className="absolute right-16 top-12 flex flex-col gap-2">
         {['yellow', 'red', 'white', 'blue'].map((c) => (
           <button
             key={c}
