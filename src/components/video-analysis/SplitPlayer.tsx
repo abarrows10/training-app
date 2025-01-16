@@ -146,7 +146,7 @@ const SplitPlayer = () => {
       </div>
 
       {(leftVideo.url || rightVideo.url) && (
-        <div className="fixed bottom-38 left-1/2 -translate-x-1/2 z-50">
+        <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-50">
           <motion.button
             onClick={handleSync}
             className={`px-6 py-2 rounded-full text-sm font-medium ${
