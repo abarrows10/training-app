@@ -28,7 +28,25 @@ const SplitPlayer = () => {
   };
 
   const handleSync = () => {
-    setIsSynced(!isSynced);
+    const newSyncState = !isSynced;
+    setIsSynced(newSyncState);
+    
+    if (newSyncState && leftVideoRef.current && rightVideoRef.current) {
+      // Sync time and playback rate when enabling sync
+      rightVideoRef.current.currentTime = leftVideoRef.current.currentTime;
+      rightVideoRef.current.playbackRate = leftVideoRef.current.playbackRate;
+      
+      // Sync play state
+      if (!leftVideoRef.current.paused) {
+        rightVideoRef.current.play();
+      }
+    }
+  };
+
+  const handleVideoTimeUpdate = (mainVideo: HTMLVideoElement | null, syncedVideo: HTMLVideoElement | null) => {
+    if (isSynced && mainVideo && syncedVideo) {
+      syncedVideo.currentTime = mainVideo.currentTime;
+    }
   };
 
   const handleVideoPlay = (mainVideo: HTMLVideoElement | null, syncedVideo: HTMLVideoElement | null) => {
@@ -42,6 +60,12 @@ const SplitPlayer = () => {
   const handleVideoPause = (syncedVideo: HTMLVideoElement | null) => {
     if (isSynced && syncedVideo) {
       syncedVideo.pause();
+    }
+  };
+
+  const handlePlaybackRateChange = (mainVideo: HTMLVideoElement | null, syncedVideo: HTMLVideoElement | null) => {
+    if (isSynced && mainVideo && syncedVideo) {
+      syncedVideo.playbackRate = mainVideo.playbackRate;
     }
   };
 
@@ -64,6 +88,8 @@ const SplitPlayer = () => {
                 playsInline
                 onPlay={() => handleVideoPlay(leftVideoRef.current, rightVideoRef.current)}
                 onPause={() => handleVideoPause(rightVideoRef.current)}
+                onTimeUpdate={() => handleVideoTimeUpdate(leftVideoRef.current, rightVideoRef.current)}
+                onRateChange={() => handlePlaybackRateChange(leftVideoRef.current, rightVideoRef.current)}
               />
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={leftVideoRef} />
@@ -88,6 +114,8 @@ const SplitPlayer = () => {
                 playsInline
                 onPlay={() => handleVideoPlay(rightVideoRef.current, leftVideoRef.current)}
                 onPause={() => handleVideoPause(leftVideoRef.current)}
+                onTimeUpdate={() => handleVideoTimeUpdate(rightVideoRef.current, leftVideoRef.current)}
+                onRateChange={() => handlePlaybackRateChange(rightVideoRef.current, leftVideoRef.current)}
               />
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={rightVideoRef} />
@@ -98,22 +126,22 @@ const SplitPlayer = () => {
       </div>
 
       {(leftVideo.url || rightVideo.url) && (
- <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-50">
-   <motion.button
-     onClick={handleSync}
-     className={`px-6 py-2 rounded-full text-sm font-medium ${
-       isSynced 
-         ? 'bg-yellow-400 text-black' 
-         : 'bg-white/20 text-white hover:bg-white/30'
-     }`}
-     whileTap={{ scale: 0.95 }}
-   >
-     {isSynced ? 'SYNCED' : 'SYNC'}
-   </motion.button>
- </div>
-)}
-   </div>
- );
+        <div className="fixed bottom-46 left-1/2 -translate-x-1/2 z-50">
+          <motion.button
+            onClick={handleSync}
+            className={`px-6 py-2 rounded-full text-sm font-medium ${
+              isSynced 
+                ? 'bg-yellow-400 text-black' 
+                : 'bg-white/20 text-white hover:bg-white/30'
+            }`}
+            whileTap={{ scale: 0.95 }}
+          >
+            {isSynced ? 'SYNCED' : 'SYNC'}
+          </motion.button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default SplitPlayer;
