@@ -8,6 +8,8 @@ interface VideoControlsProps {
   onFrameStep?: (direction: 'forward' | 'backward') => void;
 }
 
+const PLAYBACK_SPEEDS = [2, 1.5, 1, 0.5, 0.25, 0.125];
+
 const VideoControls: React.FC<VideoControlsProps> = ({ videoRef, onFrameStep }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -85,6 +87,16 @@ const VideoControls: React.FC<VideoControlsProps> = ({ videoRef, onFrameStep }) 
     }
   };
 
+  const handleSpeedChange = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const currentIndex = PLAYBACK_SPEEDS.indexOf(playbackRate);
+    const nextIndex = (currentIndex + 1) % PLAYBACK_SPEEDS.length;
+    const newSpeed = PLAYBACK_SPEEDS[nextIndex];
+    video.playbackRate = newSpeed;
+    setPlaybackRate(newSpeed);
+  };
+
   const formatTime = (time: number) => {
     const integerTime = Math.floor(time * 1000);
     return (integerTime / 1000).toFixed(3);
@@ -121,28 +133,39 @@ const VideoControls: React.FC<VideoControlsProps> = ({ videoRef, onFrameStep }) 
 
       <div className="flex items-center justify-between mt-2">
         <button 
-          onClick={() => stepFrame('backward')}
-          className="text-white text-lg px-2"
+          onClick={handleSpeedChange}
+          className="text-white text-xs px-2"
         >
-          ⋘
+          {playbackRate}x
         </button>
 
-        <button
-          onClick={togglePlay}
-          className="text-white"
-        >
-          {isPlaying ? 
-            <Pause className="w-6 h-6" /> : 
-            <Play className="w-6 h-6" />
-          }
-        </button>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => stepFrame('backward')}
+            className="text-white text-lg px-2"
+          >
+            ⋘
+          </button>
 
-        <button
-          onClick={() => stepFrame('forward')}
-          className="text-white text-lg px-2"
-        >
-          ⋙
-        </button>
+          <button
+            onClick={togglePlay}
+            className="text-white"
+          >
+            {isPlaying ? 
+              <Pause className="w-6 h-6" /> : 
+              <Play className="w-6 h-6" />
+            }
+          </button>
+
+          <button
+            onClick={() => stepFrame('forward')}
+            className="text-white text-lg px-2"
+          >
+            ⋙
+          </button>
+        </div>
+
+        <div className="w-8" /> {/* Spacer to balance layout */}
       </div>
     </div>
   );
