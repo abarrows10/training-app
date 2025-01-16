@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { Link } from 'lucide-react';
 import VideoAnalysisUploader from './VideoAnalysisUploader';
 import VideoControls from './VideoControls';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface VideoState {
   file: File | null;
@@ -14,7 +13,7 @@ interface VideoState {
 const SplitPlayer = () => {
   const [leftVideo, setLeftVideo] = useState<VideoState>({ file: null, url: null });
   const [rightVideo, setRightVideo] = useState<VideoState>({ file: null, url: null });
-  const [isLinked, setIsLinked] = useState(false);
+  const [isSynced, setIsSynced] = useState(false);
   
   const leftVideoRef = useRef<HTMLVideoElement>(null);
   const rightVideoRef = useRef<HTMLVideoElement>(null);
@@ -28,32 +27,26 @@ const SplitPlayer = () => {
     }
   };
 
+  const handleSync = () => {
+    setIsSynced(!isSynced);
+  };
+
+  const handleVideoPlay = (mainVideo: HTMLVideoElement | null, syncedVideo: HTMLVideoElement | null) => {
+    if (isSynced && mainVideo && syncedVideo) {
+      syncedVideo.currentTime = mainVideo.currentTime;
+      syncedVideo.playbackRate = mainVideo.playbackRate;
+      syncedVideo.play();
+    }
+  };
+
+  const handleVideoPause = (syncedVideo: HTMLVideoElement | null) => {
+    if (isSynced && syncedVideo) {
+      syncedVideo.pause();
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black flex flex-col h-screen">
-      <AnimatePresence>
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute top-4 left-1/2 -translate-x-1/2 z-10"
-        >
-          <motion.div 
-            className="bg-black/50 backdrop-blur-sm rounded px-3 py-1"
-            whileHover={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
-          >
-            <motion.button 
-              onClick={() => setIsLinked(!isLinked)}
-              className="flex items-center gap-2"
-              whileTap={{ scale: 0.95 }}
-            >
-              <Link className={`w-4 h-4 ${isLinked ? 'text-yellow-400' : 'text-white'}`} />
-              <span className={`text-sm ${isLinked ? 'text-yellow-400' : 'text-white'}`}>
-                {isLinked ? 'LINKED' : 'LINK'}
-              </span>
-            </motion.button>
-          </motion.div>
-        </motion.div>
-      </AnimatePresence>
-
       <div className="flex-1 flex flex-row pb-32">
         <div className="flex-1 relative">
           {!leftVideo.url ? (
@@ -69,6 +62,8 @@ const SplitPlayer = () => {
                 src={leftVideo.url}
                 className="absolute inset-0 w-full h-full object-contain"
                 playsInline
+                onPlay={() => handleVideoPlay(leftVideoRef.current, rightVideoRef.current)}
+                onPause={() => handleVideoPause(rightVideoRef.current)}
               />
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={leftVideoRef} />
@@ -91,6 +86,8 @@ const SplitPlayer = () => {
                 src={rightVideo.url}
                 className="absolute inset-0 w-full h-full object-contain"
                 playsInline
+                onPlay={() => handleVideoPlay(rightVideoRef.current, leftVideoRef.current)}
+                onPause={() => handleVideoPause(leftVideoRef.current)}
               />
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={rightVideoRef} />
@@ -99,6 +96,19 @@ const SplitPlayer = () => {
           )}
         </div>
       </div>
+
+      {leftVideo.url && rightVideo.url && (
+        <motion.button
+          onClick={handleSync}
+          className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-white ${
+            isSynced ? 'bg-yellow-400' : 'bg-white/20'
+          }`}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          Sync
+        </motion.button>
+      )}
     </div>
   );
 };
