@@ -18,6 +18,7 @@ const SplitPlayer = () => {
   const [isSynced, setIsSynced] = useState(false);
   const [showDrawingTools, setShowDrawingTools] = useState(false);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
+  const [syncOffsets, setSyncOffsets] = useState({ left: 0, right: 0 });
   
   const leftVideoRef = useRef<HTMLVideoElement>(null);
   const rightVideoRef = useRef<HTMLVideoElement>(null);
@@ -51,9 +52,11 @@ const SplitPlayer = () => {
     if (side === 'left') {
       if (leftVideo.url) URL.revokeObjectURL(leftVideo.url);
       setLeftVideo({ file: null, url: null });
+      setIsSynced(false);
     } else {
       if (rightVideo.url) URL.revokeObjectURL(rightVideo.url);
       setRightVideo({ file: null, url: null });
+      setIsSynced(false);
     }
   };
 
@@ -62,37 +65,54 @@ const SplitPlayer = () => {
     setIsSynced(newSyncState);
     
     if (newSyncState && leftVideoRef.current && rightVideoRef.current) {
-      rightVideoRef.current.currentTime = leftVideoRef.current.currentTime;
-      rightVideoRef.current.playbackRate = leftVideoRef.current.playbackRate;
-      
-      if (!leftVideoRef.current.paused) {
-        rightVideoRef.current.play();
-      }
+      // Store the current times when syncing
+      setSyncOffsets({
+        left: leftVideoRef.current.currentTime,
+        right: rightVideoRef.current.currentTime
+      });
     }
   };
 
-  const handleVideoTimeUpdate = (mainVideo: HTMLVideoElement | null, syncedVideo: HTMLVideoElement | null) => {
-    if (isSynced && mainVideo && syncedVideo) {
-      syncedVideo.currentTime = mainVideo.currentTime;
-    }
+  const handleVideoTimeUpdate = (source: 'left' | 'right') => {
+    if (!isSynced) return;
+
+    const mainVideo = source === 'left' ? leftVideoRef.current : rightVideoRef.current;
+    const syncedVideo = source === 'left' ? rightVideoRef.current : leftVideoRef.current;
+    
+    if (!mainVideo || !syncedVideo) return;
+
+    const timeDiff = source === 'left' 
+      ? syncOffsets.right - syncOffsets.left
+      : syncOffsets.left - syncOffsets.right;
+
+    syncedVideo.currentTime = mainVideo.currentTime + timeDiff;
   };
 
-  const handleVideoPlay = (mainVideo: HTMLVideoElement | null, syncedVideo: HTMLVideoElement | null) => {
-    if (isSynced && mainVideo && syncedVideo) {
-      syncedVideo.currentTime = mainVideo.currentTime;
-      syncedVideo.playbackRate = mainVideo.playbackRate;
+  const handleVideoPlay = (source: 'left' | 'right') => {
+    if (!isSynced) return;
+
+    const syncedVideo = source === 'left' ? rightVideoRef.current : leftVideoRef.current;
+    if (syncedVideo) {
       syncedVideo.play();
     }
   };
 
-  const handleVideoPause = (syncedVideo: HTMLVideoElement | null) => {
-    if (isSynced && syncedVideo) {
+  const handleVideoPause = (source: 'left' | 'right') => {
+    if (!isSynced) return;
+
+    const syncedVideo = source === 'left' ? rightVideoRef.current : leftVideoRef.current;
+    if (syncedVideo) {
       syncedVideo.pause();
     }
   };
 
-  const handlePlaybackRateChange = (mainVideo: HTMLVideoElement | null, syncedVideo: HTMLVideoElement | null) => {
-    if (isSynced && mainVideo && syncedVideo) {
+  const handlePlaybackRateChange = (source: 'left' | 'right') => {
+    if (!isSynced) return;
+
+    const mainVideo = source === 'left' ? leftVideoRef.current : rightVideoRef.current;
+    const syncedVideo = source === 'left' ? rightVideoRef.current : leftVideoRef.current;
+    
+    if (mainVideo && syncedVideo) {
       syncedVideo.playbackRate = mainVideo.playbackRate;
     }
   };
@@ -101,7 +121,8 @@ const SplitPlayer = () => {
     try {
       const exportData: any = {
         timestamp: new Date().toISOString(),
-        syncEnabled: isSynced
+        syncEnabled: isSynced,
+        syncOffsets: isSynced ? syncOffsets : null
       };
 
       if (leftVideo.url) {
@@ -135,28 +156,14 @@ const SplitPlayer = () => {
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col h-screen">
-      {/* Top Navigation */}
-      <div className="fixed top-4 left-0 right-0 flex justify-between items-center px-4 z-50">
-        <motion.button
-          onClick={() => setShowDrawingTools(!showDrawingTools)}
-          className="p-2 rounded-full bg-black/50 text-white"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <Pen className={showDrawingTools ? 'text-yellow-400' : 'text-white'} />
-        </motion.button>
-
-        {(leftVideo.url || rightVideo.url) && (
-          <motion.button
-            onClick={handleSave}
-            className="p-2 rounded-full bg-black/50 text-white"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Download className="w-6 h-6" />
-          </motion.button>
-        )}
-      </div>
+      {/* Drawing Tools Toggle */}
+      <motion.button
+        onClick={() => setShowDrawingTools(!showDrawingTools)}
+        className="fixed top-4 right-4 z-50 p-2 rounded-full bg-black/50 text-white"
+        whileHover={{ scale: 1.1 }}
+      >
+        <Pen className={`w-6 h-6 ${showDrawingTools ? 'text-yellow-400' : 'text-white'}`} />
+      </motion.button>
 
       <div ref={containerRef} className="flex-1 flex flex-row pb-32">
         <div className="flex-1 relative">
@@ -173,10 +180,10 @@ const SplitPlayer = () => {
                 src={leftVideo.url}
                 className="absolute inset-0 w-full h-full object-contain"
                 playsInline
-                onPlay={() => handleVideoPlay(leftVideoRef.current, rightVideoRef.current)}
-                onPause={() => handleVideoPause(rightVideoRef.current)}
-                onTimeUpdate={() => handleVideoTimeUpdate(leftVideoRef.current, rightVideoRef.current)}
-                onRateChange={() => handlePlaybackRateChange(leftVideoRef.current, rightVideoRef.current)}
+                onPlay={() => handleVideoPlay('left')}
+                onPause={() => handleVideoPause('left')}
+                onTimeUpdate={() => handleVideoTimeUpdate('left')}
+                onRateChange={() => handlePlaybackRateChange('left')}
               />
               {canvasDimensions.width > 0 && showDrawingTools && (
                 <DrawingCanvas 
@@ -187,7 +194,7 @@ const SplitPlayer = () => {
               )}
               <button
                 onClick={() => removeVideo('left')}
-                className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/50 text-white"
+                className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -212,10 +219,10 @@ const SplitPlayer = () => {
                 src={rightVideo.url}
                 className="absolute inset-0 w-full h-full object-contain"
                 playsInline
-                onPlay={() => handleVideoPlay(rightVideoRef.current, leftVideoRef.current)}
-                onPause={() => handleVideoPause(leftVideoRef.current)}
-                onTimeUpdate={() => handleVideoTimeUpdate(rightVideoRef.current, leftVideoRef.current)}
-                onRateChange={() => handlePlaybackRateChange(rightVideoRef.current, leftVideoRef.current)}
+                onPlay={() => handleVideoPlay('right')}
+                onPause={() => handleVideoPause('right')}
+                onTimeUpdate={() => handleVideoTimeUpdate('right')}
+                onRateChange={() => handlePlaybackRateChange('right')}
               />
               {canvasDimensions.width > 0 && showDrawingTools && (
                 <DrawingCanvas 
@@ -226,7 +233,7 @@ const SplitPlayer = () => {
               )}
               <button
                 onClick={() => removeVideo('right')}
-                className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/50 text-white"
+                className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -239,19 +246,31 @@ const SplitPlayer = () => {
       </div>
 
       {(leftVideo.url || rightVideo.url) && (
-        <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-50">
-          <motion.button
-            onClick={handleSync}
-            className={`px-6 py-2 rounded-full text-sm font-medium ${
-              isSynced 
-                ? 'bg-yellow-400 text-black' 
-                : 'bg-white/20 text-white hover:bg-white/30'
-            }`}
-            whileTap={{ scale: 0.95 }}
-          >
-            {isSynced ? 'SYNCED' : 'SYNC'}
-          </motion.button>
-        </div>
+        <>
+          <div className="fixed bottom-48 left-1/2 -translate-x-1/2 z-50">
+            <motion.button
+              onClick={handleSave}
+              className="px-6 py-2 rounded-full bg-white/20 text-white hover:bg-white/30"
+              whileTap={{ scale: 0.95 }}
+            >
+              <Download className="w-6 h-6" />
+            </motion.button>
+          </div>
+
+          <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-50">
+            <motion.button
+              onClick={handleSync}
+              className={`px-6 py-2 rounded-full text-sm font-medium ${
+                isSynced 
+                  ? 'bg-yellow-400 text-black' 
+                  : 'bg-white/20 text-white hover:bg-white/30'
+              }`}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isSynced ? 'SYNCED' : 'SYNC'}
+            </motion.button>
+          </div>
+        </>
       )}
     </div>
   );
