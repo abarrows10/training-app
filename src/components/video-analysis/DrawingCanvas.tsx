@@ -72,59 +72,6 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
     });
   };
 
-  const drawShape = (ctx: CanvasRenderingContext2D, mode: DrawingMode, start: Point, end: Point) => {
-    if (!start || !end) return;
-  
-    ctx.beginPath();
-    
-    switch (mode) {
-      case 'line':
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(end.x, end.y);
-        break;
-        
-      case 'circle':
-        const radius = Math.sqrt(
-          Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
-        );
-        ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
-        break;
-        
-      case 'rectangle':
-        const width = end.x - start.x;
-        const height = end.y - start.y;
-        ctx.rect(start.x, start.y, width, height);
-        break;
-        
-      case 'triangle':
-        ctx.moveTo(start.x, end.y);
-        ctx.lineTo(start.x + (end.x - start.x) / 2, start.y);
-        ctx.lineTo(end.x, end.y);
-        ctx.closePath();
-        break;
-        
-      case 'arrow':
-        const angle = Math.atan2(end.y - start.y, end.x - start.x);
-        const headLength = 20;
-        
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(end.x, end.y);
-        
-        ctx.lineTo(
-          end.x - headLength * Math.cos(angle - Math.PI / 6),
-          end.y - headLength * Math.sin(angle - Math.PI / 6)
-        );
-        ctx.moveTo(end.x, end.y);
-        ctx.lineTo(
-          end.x - headLength * Math.cos(angle + Math.PI / 6),
-          end.y - headLength * Math.sin(angle + Math.PI / 6)
-        );
-        break;
-    }
-    
-    ctx.stroke();
-  };
-
   const drawFreehand = (ctx: CanvasRenderingContext2D, points: Point[], color: string) => {
     if (points.length < 2) return;
 
@@ -259,7 +206,58 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
     updateDrawings(drawings.slice(0, -1));
   };
 
-  // Previous drawShape function remains the same...
+  const drawShape = (ctx: CanvasRenderingContext2D, mode: DrawingMode, start: Point, end: Point) => {
+    if (!start || !end) return;
+  
+    ctx.beginPath();
+    
+    switch (mode) {
+      case 'line':
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        break;
+        
+      case 'circle':
+        const radius = Math.sqrt(
+          Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
+        );
+        ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
+        break;
+        
+      case 'rectangle':
+        const width = end.x - start.x;
+        const height = end.y - start.y;
+        ctx.rect(start.x, start.y, width, height);
+        break;
+        
+      case 'triangle':
+        ctx.moveTo(start.x, end.y);
+        ctx.lineTo(start.x + (end.x - start.x) / 2, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.closePath();
+        break;
+        
+      case 'arrow':
+        const angle = Math.atan2(end.y - start.y, end.x - start.x);
+        const headLength = 20;
+        
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        
+        ctx.lineTo(
+          end.x - headLength * Math.cos(angle - Math.PI / 6),
+          end.y - headLength * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.moveTo(end.x, end.y);
+        ctx.lineTo(
+          end.x - headLength * Math.cos(angle + Math.PI / 6),
+          end.y - headLength * Math.sin(angle + Math.PI / 6)
+        );
+        break;
+    }
+    
+    ctx.stroke();
+  };
 
   return (
     <>
