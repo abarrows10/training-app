@@ -15,9 +15,6 @@ const VideoControls: React.FC<VideoControlsProps> = ({ videoRef, onFrameStep }) 
   const [duration, setDuration] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
-  
-  const x = useMotionValue(0);
-  const progress = useTransform(x, [-100, 100], [-0.5, 0.5]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -40,17 +37,19 @@ const VideoControls: React.FC<VideoControlsProps> = ({ videoRef, onFrameStep }) 
     };
   }, [videoRef, isDragging]);
 
-  useEffect(() => {
-    const updateVideoTime = () => {
-      const video = videoRef.current;
-      if (!video || !isDragging) return;
+  const handleScrubberClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const video = videoRef.current;
+    const scrubber = e.currentTarget;
+    if (!video || !scrubber) return;
 
-      const newTime = currentTime + progress.get() * duration;
-      video.currentTime = Math.max(0, Math.min(newTime, duration));
-    };
+    const rect = scrubber.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = x / rect.width;
+    const newTime = percentage * duration;
 
-    progress.onChange(updateVideoTime);
-  }, [progress, duration, currentTime, isDragging, videoRef]);
+    video.currentTime = Math.max(0, Math.min(newTime, duration));
+    setCurrentTime(newTime);
+  };
 
   const togglePlay = () => {
     const video = videoRef.current;
@@ -91,102 +90,102 @@ const VideoControls: React.FC<VideoControlsProps> = ({ videoRef, onFrameStep }) 
   };
 
   return (
-    <div className="bg-black/50 backdrop-blur-sm px-4 py-3">
-      <div className="relative mb-4">
-        <AnimatePresence>
-          {isDragging && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="absolute -top-8 px-2 py-1 bg-black/70 rounded text-white text-sm transform -translate-x-1/2"
-              style={{ left: `${(currentTime / duration) * 100}%` }}
-            >
-              {formatTime(currentTime)}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="relative h-12">
-          {/* Progress bar */}
-          <div 
-            className="absolute inset-y-0 left-0 bg-[#00A3E0]/30"
-            style={{ width: `${(currentTime / duration) * 100}%` }}
-          />
-          
-          {/* Frame markers */}
-          <div className="absolute inset-0 flex items-center">
-            {Array.from({ length: 30 }).map((_, i) => (
-              <div
-                key={i}
-                className={`flex-1 h-4 ${i % 5 === 0 ? 'bg-white/30' : 'bg-white/20'}`}
-                style={{ margin: '0 1px' }}
-              />
-            ))}
-          </div>
-
-          {/* Draggable handle */}
-          <motion.div
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.1}
-            dragMomentum={false}
-            onDragStart={() => setIsDragging(true)}
-            onDragEnd={() => setIsDragging(false)}
-            style={{ x }}
-            className="absolute top-1/2 -translate-y-1/2 w-8 h-8 bg-[#00A3E0] rounded-full cursor-pointer"
-            whileDrag={{ scale: 1.2 }}
-            whileHover={{ scale: 1.1 }}
-          />
-        </div>
+    <div className="bg-black/80 backdrop-blur-sm px-4 py-4">
+      <div className="mb-2 flex justify-between items-center text-sm text-white">
+        <div>{formatTime(currentTime)}</div>
+        <div>{formatTime(duration)}</div>
       </div>
 
-      <div className="flex items-center justify-between px-2">
+      <motion.div
+        className="relative h-16 touch-action-none"
+        onClick={handleScrubberClick}
+      >
+        {/* Progress Track */}
+        <div className="absolute inset-0 bg-white/10 rounded-full" />
+        
+        {/* Progress Bar */}
+        <div 
+          className="absolute inset-y-0 left-0 bg-[#00A3E0] rounded-full"
+          style={{ width: `${(currentTime / duration) * 100}%` }}
+        />
+
+        {/* Frame Markers */}
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex">
+          {Array.from({ length: 30 }).map((_, i) => (
+            <div
+              key={i}
+              className={`flex-1 ${i % 5 === 0 ? 'h-3 bg-white/40' : 'h-2 bg-white/20'}`}
+              style={{ margin: '0 1px' }}
+            />
+          ))}
+        </div>
+
+        {/* Handle */}
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0}
+          dragMomentum={false}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={() => setIsDragging(false)}
+          className="absolute top-1/2 -translate-y-1/2 -ml-4 w-8 h-8"
+          style={{
+            left: `${(currentTime / duration) * 100}%`,
+            touchAction: 'none'
+          }}
+        >
+          <div className="w-full h-full bg-[#00A3E0] rounded-full shadow-lg" />
+        </motion.div>
+      </motion.div>
+
+      <div className="flex items-center justify-between mt-4 px-2">
         <motion.button 
           onClick={togglePlaybackRate}
-          className="text-white text-base px-3 py-1 rounded"
+          className="text-white text-lg font-medium px-4 py-2 rounded-full"
           whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
           whileTap={{ scale: 0.95 }}
         >
           {playbackRate}x
         </motion.button>
 
+        <div className="flex items-center gap-6">
+          <motion.button
+            onClick={() => stepFrame('backward')}
+            className="text-white text-2xl px-4 py-2 rounded-full"
+            whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+            whileTap={{ scale: 0.95 }}
+          >
+            ⋘
+          </motion.button>
+
+          <motion.button
+            onClick={togglePlay}
+            className="text-white p-3 rounded-full bg-[#00A3E0]"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            {isPlaying ? 
+              <Pause className="w-8 h-8" /> : 
+              <Play className="w-8 h-8" />
+            }
+          </motion.button>
+
+          <motion.button
+            onClick={() => stepFrame('forward')}
+            className="text-white text-2xl px-4 py-2 rounded-full"
+            whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+            whileTap={{ scale: 0.95 }}
+          >
+            ⋙
+          </motion.button>
+        </div>
+
         <motion.button 
-          className="text-white p-2 rounded"
-          whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <RefreshCw className="w-7 h-7" />
-        </motion.button>
-
-        <motion.button
-          onClick={() => stepFrame('backward')}
-          className="text-white text-2xl px-4 py-2 rounded"
-          whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-          whileTap={{ scale: 0.95 }}
-        >
-          ⋘
-        </motion.button>
-
-        <motion.button
-          onClick={togglePlay}
           className="text-white p-2 rounded-full"
           whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
           whileTap={{ scale: 0.95 }}
         >
-          {isPlaying ? 
-            <Pause className="w-10 h-10" /> : 
-            <Play className="w-10 h-10" />
-          }
-        </motion.button>
-
-        <motion.button
-          onClick={() => stepFrame('forward')}
-          className="text-white text-2xl px-4 py-2 rounded"
-          whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-          whileTap={{ scale: 0.95 }}
-        >
-          ⋙
+          <RefreshCw className="w-6 h-6" />
         </motion.button>
       </div>
     </div>
