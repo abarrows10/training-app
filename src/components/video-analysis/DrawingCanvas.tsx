@@ -38,6 +38,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
   const [textInput, setTextInput] = useState('');
   const [drawings, setDrawings] = useState<Drawing[]>(savedDrawings);
   const [currentPoints, setCurrentPoints] = useState<Point[]>([]);
+  const [tempEndPoint, setTempEndPoint] = useState<Point | null>(null);
 
   useImperativeHandle(ref, () => ({
     getDrawings: () => drawings,
@@ -72,7 +73,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
       } else if (drawing.mode === 'freehand') {
         drawFreehand(ctx, drawing.points, drawing.color);
       } else {
-        drawShape(ctx, drawing.mode, drawing.points[0], drawing.points[drawing.points.length - 1]);
+        drawShape(ctx, drawing.mode, drawing.points[0], drawing.points[1]);
       }
     });
   };
@@ -183,13 +184,16 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
     setIsDrawing(true);
     setStartPoint(point);
     setCurrentPoints([point]);
+    setTempEndPoint(point);
   };
 
   const draw = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!isDrawing) return;
+    if (!isDrawing || !startPoint) return;
     
     const point = getCoordinates(e);
     if (!point) return;
+
+    setTempEndPoint(point);
 
     if (mode === 'freehand') {
       setCurrentPoints(prev => [...prev, point]);
@@ -212,7 +216,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
     } else {
       const previewCanvas = previewCanvasRef.current;
       const previewCtx = previewCanvas?.getContext('2d');
-      if (!previewCanvas || !previewCtx || !startPoint) return;
+      if (!previewCanvas || !previewCtx) return;
 
       previewCtx.clearRect(0, 0, width, height);
       previewCtx.strokeStyle = color;
@@ -225,25 +229,20 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
   };
 
   const stopDrawing = () => {
-    if (!isDrawing) return;
+    if (!isDrawing || !startPoint || !tempEndPoint) return;
 
-    if (mode === 'freehand' && currentPoints.length > 1) {
-      updateDrawings([...drawings, {
-        mode: 'freehand',
-        color,
-        points: currentPoints
-      }]);
-    } else if (startPoint && currentPoints.length > 0) {
-      updateDrawings([...drawings, {
-        mode,
-        color,
-        points: [startPoint, currentPoints[currentPoints.length - 1]]
-      }]);
-    }
+    const newDrawing: Drawing = {
+      mode,
+      color,
+      points: mode === 'freehand' ? currentPoints : [startPoint, tempEndPoint]
+    };
+
+    updateDrawings([...drawings, newDrawing]);
 
     setIsDrawing(false);
     setStartPoint(null);
     setCurrentPoints([]);
+    setTempEndPoint(null);
 
     const previewCanvas = previewCanvasRef.current;
     const previewCtx = previewCanvas?.getContext('2d');
@@ -257,6 +256,8 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
       const previewCanvas = previewCanvasRef.current;
       if (canvas) canvas.getContext('2d')?.clearRect(0, 0, width, height);
       if (previewCanvas) previewCanvas.getContext('2d')?.clearRect(0, 0, width, height);
+      setShowTextInput(false);
+      setTextInput('');
     }
   };
 
@@ -318,7 +319,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
       )}
 
       {/* Drawing Tools */}
-      <div className="absolute right-4 top-26 flex flex-col gap-2">
+      <div className="absolute right-4 top-32 flex flex-col gap-2">
         <button
           onClick={() => setMode('freehand')}
           className={`p-2 rounded-full ${mode === 'freehand' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
@@ -376,7 +377,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
       </div>
 
       {/* Color Picker */}
-      <div className="absolute right-16 top-26 flex flex-col gap-2">
+      <div className="absolute right-16 top-32 flex flex-col gap-2">
         {['yellow', 'red', 'white', 'blue'].map((c) => (
           <button
             key={c}
