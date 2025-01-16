@@ -29,7 +29,7 @@ const SplitPlayer = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black">
+    <div className="fixed inset-0 bg-black flex flex-col h-screen">
       <AnimatePresence>
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
@@ -54,7 +54,7 @@ const SplitPlayer = () => {
         </motion.div>
       </AnimatePresence>
 
-      <div className="h-screen flex flex-row">
+      <div className="flex-1 flex flex-row pb-32">
         <div className="flex-1 relative">
           {!leftVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'left')} side="left" />
@@ -68,6 +68,7 @@ const SplitPlayer = () => {
                 ref={leftVideoRef}
                 src={leftVideo.url}
                 className="absolute inset-0 w-full h-full object-contain"
+                playsInline
               />
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={leftVideoRef} />
@@ -89,6 +90,7 @@ const SplitPlayer = () => {
                 ref={rightVideoRef}
                 src={rightVideo.url}
                 className="absolute inset-0 w-full h-full object-contain"
+                playsInline
               />
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={rightVideoRef} />
