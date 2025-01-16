@@ -1,19 +1,26 @@
 "use client";
 
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import { Circle, Square, Type, Pencil, Eraser, Trash2, Triangle, ArrowRight } from 'lucide-react';
+import { Circle, Square, Type, Pencil, Trash2, Triangle, ArrowRight, Undo } from 'lucide-react';
 
 interface DrawingCanvasProps {
   width: number;
   height: number;
 }
 
-type DrawingMode = 'freehand' | 'line' | 'circle' | 'rectangle' | 'triangle' | 'arrow' | 'text' | 'eraser';
+type DrawingMode = 'freehand' | 'line' | 'circle' | 'rectangle' | 'triangle' | 'arrow' | 'text';
 type DrawingColor = 'yellow' | 'red' | 'white' | 'blue';
 
 interface Point {
   x: number;
   y: number;
+}
+
+interface Drawing {
+  mode: DrawingMode;
+  color: DrawingColor;
+  points: Point[];
+  text?: string;
 }
 
 const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, ref) => {
@@ -27,11 +34,11 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, re
   const [showTextInput, setShowTextInput] = useState(false);
   const [textInputPosition, setTextInputPosition] = useState<Point>({ x: 0, y: 0 });
   const [textInput, setTextInput] = useState('');
-  const drawHistoryRef = useRef<ImageData[]>([]);
-  const historyIndexRef = useRef(-1);
+  const [drawings, setDrawings] = useState<Drawing[]>([]);
+  const [currentDrawing, setCurrentDrawing] = useState<Point[]>([]);
 
   useImperativeHandle(ref, () => ({
-    getDrawings: () => drawHistoryRef.current,
+    getDrawings: () => drawings,
     clearDrawings: clearCanvas
   }));
 
@@ -44,16 +51,34 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, re
     canvas.height = height;
     previewCanvas.width = width;
     previewCanvas.height = height;
-    
-    const ctx = canvas.getContext('2d');
-    const previewCtx = previewCanvas.getContext('2d');
-    if (!ctx || !previewCtx) return;
+  }, [width, height]);
 
-    ctx.strokeStyle = color;
-    ctx.lineWidth = strokeWidth;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-  }, [width, height, color, strokeWidth]);
+  useEffect(() => {
+    redrawCanvas();
+  }, [drawings]);
+
+  const redrawCanvas = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawings.forEach(drawing => {
+      ctx.strokeStyle = drawing.color;
+      ctx.lineWidth = strokeWidth;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (drawing.mode === 'text' && drawing.text) {
+        ctx.font = '20px Arial';
+        ctx.fillStyle = drawing.color;
+        ctx.fillText(drawing.text, drawing.points[0].x, drawing.points[0].y);
+      } else {
+        drawShape(ctx, drawing.mode, drawing.points[0], drawing.points[1]);
+      }
+    });
+  };
 
   const getCoordinates = (e: React.TouchEvent | React.MouseEvent | TouchEvent | MouseEvent): Point | null => {
     const canvas = canvasRef.current;
@@ -77,19 +102,33 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, re
   };
 
   const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawHistoryRef.current = [];
-    historyIndexRef.current = -1;
+    if (confirm('Are you sure you want to clear all drawings?')) {
+      setDrawings([]);
+      const canvas = canvasRef.current;
+      const previewCanvas = previewCanvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      const previewCtx = previewCanvas?.getContext('2d');
+      
+      if (ctx) ctx.clearRect(0, 0, width, height);
+      if (previewCtx) previewCtx.clearRect(0, 0, width, height);
+    }
   };
 
-  const drawShape = (ctx: CanvasRenderingContext2D, start: Point, end: Point) => {
+  const undoLastDrawing = () => {
+    setDrawings(prev => prev.slice(0, -1));
+  };
+
+  const drawShape = (ctx: CanvasRenderingContext2D, mode: DrawingMode, start: Point, end: Point) => {
+    if (!start || !end) return;
+
     ctx.beginPath();
     
     switch (mode) {
+      case 'freehand':
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        break;
+        
       case 'line':
         ctx.moveTo(start.x, start.y);
         ctx.lineTo(end.x, end.y);
@@ -150,21 +189,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, re
 
     setIsDrawing(true);
     setStartPoint(point);
-
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    ctx.beginPath();
-    ctx.moveTo(point.x, point.y);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = strokeWidth;
-
-    if (mode === 'eraser') {
-      ctx.globalCompositeOperation = 'destination-out';
-    } else {
-      ctx.globalCompositeOperation = 'source-over';
-    }
+    setCurrentDrawing([point]);
   };
 
   const draw = (e: React.TouchEvent | React.MouseEvent) => {
@@ -173,48 +198,51 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, re
     const point = getCoordinates(e);
     if (!point) return;
 
-    const canvas = canvasRef.current;
     const previewCanvas = previewCanvasRef.current;
-    const ctx = canvas?.getContext('2d');
     const previewCtx = previewCanvas?.getContext('2d');
     
-    if (!canvas || !ctx || !previewCanvas || !previewCtx) return;
+    if (!previewCanvas || !previewCtx) return;
 
-    if (mode === 'freehand' || mode === 'eraser') {
-      ctx.lineTo(point.x, point.y);
-      ctx.stroke();
-    } else {
-      previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-      previewCtx.strokeStyle = color;
-      previewCtx.lineWidth = strokeWidth;
-      drawShape(previewCtx, startPoint, point);
-    }
+    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+    previewCtx.strokeStyle = color;
+    previewCtx.lineWidth = strokeWidth;
+    previewCtx.lineCap = 'round';
+    previewCtx.lineJoin = 'round';
+
+    drawShape(previewCtx, mode, startPoint, point);
+    setCurrentDrawing([startPoint, point]);
   };
 
-  const stopDrawing = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!isDrawing || !startPoint) return;
+  const stopDrawing = () => {
+    if (!isDrawing || !startPoint || currentDrawing.length < 2) return;
     
-    const point = getCoordinates(e);
-    if (!point) return;
-
-    const canvas = canvasRef.current;
-    const previewCanvas = previewCanvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    const previewCtx = previewCanvas?.getContext('2d');
-    
-    if (!canvas || !ctx || !previewCanvas || !previewCtx) return;
-
-    if (mode !== 'freehand' && mode !== 'eraser') {
-      drawShape(ctx, startPoint, point);
-      previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-    }
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    drawHistoryRef.current.push(imageData);
-    historyIndexRef.current++;
+    setDrawings(prev => [...prev, {
+      mode,
+      color,
+      points: currentDrawing
+    }]);
 
     setIsDrawing(false);
     setStartPoint(null);
+    setCurrentDrawing([]);
+
+    const previewCanvas = previewCanvasRef.current;
+    const previewCtx = previewCanvas?.getContext('2d');
+    if (previewCtx) previewCtx.clearRect(0, 0, width, height);
+  };
+
+  const handleText = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && textInput.trim() && textInputPosition) {
+      setDrawings(prev => [...prev, {
+        mode: 'text',
+        color,
+        points: [textInputPosition],
+        text: textInput
+      }]);
+      
+      setShowTextInput(false);
+      setTextInput('');
+    }
   };
 
   return (
@@ -244,24 +272,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, re
           type="text"
           value={textInput}
           onChange={(e) => setTextInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && textInput.trim()) {
-              const canvas = canvasRef.current;
-              const ctx = canvas?.getContext('2d');
-              if (!canvas || !ctx) return;
-
-              ctx.font = '20px Arial';
-              ctx.fillStyle = color;
-              ctx.fillText(textInput, textInputPosition.x, textInputPosition.y);
-              
-              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              drawHistoryRef.current.push(imageData);
-              historyIndexRef.current++;
-
-              setShowTextInput(false);
-              setTextInput('');
-            }
-          }}
+          onKeyDown={handleText}
           className="absolute bg-black/50 text-white px-2 py-1 outline-none border border-white/50 rounded z-50"
           style={{
             left: textInputPosition.x,
@@ -273,7 +284,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, re
       )}
 
       {/* Drawing Tools */}
-      <div className="absolute right-4 top-22 flex flex-col gap-2">
+      <div className="absolute right-4 top-28 flex flex-col gap-2">
         <button
           onClick={() => setMode('freehand')}
           className={`p-2 rounded-full ${mode === 'freehand' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
@@ -317,10 +328,10 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, re
           <Type className="w-5 h-5" />
         </button>
         <button
-          onClick={() => setMode('eraser')}
-          className={`p-2 rounded-full ${mode === 'eraser' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+          onClick={undoLastDrawing}
+          className="p-2 rounded-full bg-black/50 text-white hover:bg-white hover:text-black"
         >
-          <Eraser className="w-5 h-5" />
+          <Undo className="w-5 h-5" />
         </button>
         <button
           onClick={clearCanvas}
@@ -331,7 +342,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height }, re
       </div>
 
       {/* Color Picker */}
-      <div className="absolute right-16 top-22 flex flex-col gap-2">
+      <div className="absolute right-16 top-28 flex flex-col gap-2">
         {['yellow', 'red', 'white', 'blue'].map((c) => (
           <button
             key={c}
