@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import VideoAnalysisUploader from './VideoAnalysisUploader';
 import VideoControls from './VideoControls';
+import DrawingCanvas from './DrawingCanvas';
 import { motion } from 'framer-motion';
 
 interface VideoState {
@@ -14,9 +15,24 @@ const SplitPlayer = () => {
   const [leftVideo, setLeftVideo] = useState<VideoState>({ file: null, url: null });
   const [rightVideo, setRightVideo] = useState<VideoState>({ file: null, url: null });
   const [isSynced, setIsSynced] = useState(false);
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
   
   const leftVideoRef = useRef<HTMLVideoElement>(null);
   const rightVideoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        setCanvasDimensions({ width: width / 2, height });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
 
   const handleFileSelect = (file: File, side: 'left' | 'right') => {
     const url = URL.createObjectURL(file);
@@ -32,11 +48,9 @@ const SplitPlayer = () => {
     setIsSynced(newSyncState);
     
     if (newSyncState && leftVideoRef.current && rightVideoRef.current) {
-      // Sync time and playback rate when enabling sync
       rightVideoRef.current.currentTime = leftVideoRef.current.currentTime;
       rightVideoRef.current.playbackRate = leftVideoRef.current.playbackRate;
       
-      // Sync play state
       if (!leftVideoRef.current.paused) {
         rightVideoRef.current.play();
       }
@@ -71,7 +85,7 @@ const SplitPlayer = () => {
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col h-screen">
-      <div className="flex-1 flex flex-row pb-32">
+      <div ref={containerRef} className="flex-1 flex flex-row pb-32">
         <div className="flex-1 relative">
           {!leftVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'left')} side="left" />
@@ -91,6 +105,9 @@ const SplitPlayer = () => {
                 onTimeUpdate={() => handleVideoTimeUpdate(leftVideoRef.current, rightVideoRef.current)}
                 onRateChange={() => handlePlaybackRateChange(leftVideoRef.current, rightVideoRef.current)}
               />
+              {canvasDimensions.width > 0 && (
+                <DrawingCanvas width={canvasDimensions.width} height={canvasDimensions.height} />
+              )}
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={leftVideoRef} />
               </div>
@@ -117,6 +134,9 @@ const SplitPlayer = () => {
                 onTimeUpdate={() => handleVideoTimeUpdate(rightVideoRef.current, leftVideoRef.current)}
                 onRateChange={() => handlePlaybackRateChange(rightVideoRef.current, leftVideoRef.current)}
               />
+              {canvasDimensions.width > 0 && (
+                <DrawingCanvas width={canvasDimensions.width} height={canvasDimensions.height} />
+              )}
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={rightVideoRef} />
               </div>
@@ -126,7 +146,7 @@ const SplitPlayer = () => {
       </div>
 
       {(leftVideo.url || rightVideo.url) && (
-        <div className="fixed bottom-46 left-1/2 -translate-x-1/2 z-50">
+        <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-50">
           <motion.button
             onClick={handleSync}
             className={`px-6 py-2 rounded-full text-sm font-medium ${
