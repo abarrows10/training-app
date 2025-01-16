@@ -47,7 +47,7 @@ const SplitPlayer = () => {
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col h-screen">
-      <div className="flex-1 flex flex-row pb-32">
+      <div className="flex-1 flex flex-row pb-24">
         <div className="flex-1 relative">
           {!leftVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'left')} side="left" />
@@ -97,17 +97,22 @@ const SplitPlayer = () => {
         </div>
       </div>
 
-      {leftVideo.url && rightVideo.url && (
-        <motion.button
-          onClick={handleSync}
-          className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-white ${
-            isSynced ? 'bg-yellow-400' : 'bg-white/20'
-          }`}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Sync
-        </motion.button>
+      {(leftVideo.url || rightVideo.url) && (
+        <div className="fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 to-transparent">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4">
+            <motion.button
+              onClick={handleSync}
+              className={`px-6 py-2 rounded-full text-sm font-medium ${
+                isSynced 
+                  ? 'bg-yellow-400 text-black' 
+                  : 'bg-white/20 text-white hover:bg-white/30'
+              }`}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isSynced ? 'SYNCED' : 'SYNC'}
+            </motion.button>
+          </div>
+        </div>
       )}
     </div>
   );
