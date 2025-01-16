@@ -39,6 +39,11 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
   const [drawings, setDrawings] = useState<Drawing[]>(savedDrawings);
   const [currentPoints, setCurrentPoints] = useState<Point[]>([]);
 
+  useImperativeHandle(ref, () => ({
+    getDrawings: () => drawings,
+    clearDrawings: clearCanvas
+  }));
+
   useEffect(() => {
     redrawCanvas();
   }, [drawings]);
@@ -82,6 +87,59 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
     for (let i = 1; i < points.length; i++) {
       ctx.lineTo(points[i].x, points[i].y);
     }
+    ctx.stroke();
+  };
+
+  const drawShape = (ctx: CanvasRenderingContext2D, mode: DrawingMode, start: Point, end: Point) => {
+    if (!start || !end) return;
+
+    ctx.beginPath();
+    
+    switch (mode) {
+      case 'line':
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        break;
+        
+      case 'circle':
+        const radius = Math.sqrt(
+          Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
+        );
+        ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
+        break;
+        
+      case 'rectangle':
+        const width = end.x - start.x;
+        const height = end.y - start.y;
+        ctx.rect(start.x, start.y, width, height);
+        break;
+        
+      case 'triangle':
+        ctx.moveTo(start.x, end.y);
+        ctx.lineTo(start.x + (end.x - start.x) / 2, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.closePath();
+        break;
+        
+      case 'arrow':
+        const angle = Math.atan2(end.y - start.y, end.x - start.x);
+        const headLength = 20;
+        
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        
+        ctx.lineTo(
+          end.x - headLength * Math.cos(angle - Math.PI / 6),
+          end.y - headLength * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.moveTo(end.x, end.y);
+        ctx.lineTo(
+          end.x - headLength * Math.cos(angle + Math.PI / 6),
+          end.y - headLength * Math.sin(angle + Math.PI / 6)
+        );
+        break;
+    }
+    
     ctx.stroke();
   };
 
@@ -206,59 +264,6 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
     updateDrawings(drawings.slice(0, -1));
   };
 
-  const drawShape = (ctx: CanvasRenderingContext2D, mode: DrawingMode, start: Point, end: Point) => {
-    if (!start || !end) return;
-  
-    ctx.beginPath();
-    
-    switch (mode) {
-      case 'line':
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(end.x, end.y);
-        break;
-        
-      case 'circle':
-        const radius = Math.sqrt(
-          Math.pow(end.x - start.x, 2) + Math.pow(end.y - start.y, 2)
-        );
-        ctx.arc(start.x, start.y, radius, 0, 2 * Math.PI);
-        break;
-        
-      case 'rectangle':
-        const width = end.x - start.x;
-        const height = end.y - start.y;
-        ctx.rect(start.x, start.y, width, height);
-        break;
-        
-      case 'triangle':
-        ctx.moveTo(start.x, end.y);
-        ctx.lineTo(start.x + (end.x - start.x) / 2, start.y);
-        ctx.lineTo(end.x, end.y);
-        ctx.closePath();
-        break;
-        
-      case 'arrow':
-        const angle = Math.atan2(end.y - start.y, end.x - start.x);
-        const headLength = 20;
-        
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(end.x, end.y);
-        
-        ctx.lineTo(
-          end.x - headLength * Math.cos(angle - Math.PI / 6),
-          end.y - headLength * Math.sin(angle - Math.PI / 6)
-        );
-        ctx.moveTo(end.x, end.y);
-        ctx.lineTo(
-          end.x - headLength * Math.cos(angle + Math.PI / 6),
-          end.y - headLength * Math.sin(angle + Math.PI / 6)
-        );
-        break;
-    }
-    
-    ctx.stroke();
-  };
-
   return (
     <>
       <div className="absolute inset-0 pointer-events-auto">
@@ -320,12 +325,68 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
         >
           <Pencil className="w-5 h-5" />
         </button>
-        {/* Other tools remain the same but with updated className to use top-26 */}
+        <button
+          onClick={() => setMode('line')}
+          className={`p-2 rounded-full ${mode === 'line' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+        >
+          <div className="w-5 h-5 rotate-45 border-b-2" />
+        </button>
+        <button
+          onClick={() => setMode('circle')}
+          className={`p-2 rounded-full ${mode === 'circle' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+        >
+          <Circle className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => setMode('rectangle')}
+          className={`p-2 rounded-full ${mode === 'rectangle' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+        >
+          <Square className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => setMode('triangle')}
+          className={`p-2 rounded-full ${mode === 'triangle' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+        >
+          <Triangle className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => setMode('arrow')}
+          className={`p-2 rounded-full ${mode === 'arrow' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+        >
+          <ArrowRight className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => setMode('text')}
+          className={`p-2 rounded-full ${mode === 'text' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+        >
+          <Type className="w-5 h-5" />
+        </button>
+        <button
+          onClick={undoLastDrawing}
+          className="p-2 rounded-full bg-black/50 text-white hover:bg-white hover:text-black"
+        >
+          <Undo className="w-5 h-5" />
+        </button>
+        <button
+          onClick={clearCanvas}
+          className="p-2 rounded-full bg-black/50 text-white hover:bg-white hover:text-black"
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Color Picker */}
       <div className="absolute right-16 top-26 flex flex-col gap-2">
-        {/* Color buttons remain the same but with updated className to use top-26 */}
+        {['yellow', 'red', 'white', 'blue'].map((c) => (
+          <button
+            key={c}
+            onClick={() => setColor(c as DrawingColor)}
+            className={`w-8 h-8 rounded-full border-2 ${
+              color === c ? 'border-white' : 'border-transparent'
+            }`}
+            style={{ backgroundColor: c }}
+          />
+        ))}
       </div>
     </>
   );

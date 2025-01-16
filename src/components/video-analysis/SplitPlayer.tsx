@@ -12,6 +12,13 @@ interface VideoState {
   url: string | null;
 }
 
+interface Drawing {
+  mode: 'freehand' | 'line' | 'circle' | 'rectangle' | 'triangle' | 'arrow' | 'text';
+  color: 'yellow' | 'red' | 'white' | 'blue';
+  points: { x: number; y: number; }[];
+  text?: string;
+}
+
 const SplitPlayer = () => {
   const [leftVideo, setLeftVideo] = useState<VideoState>({ file: null, url: null });
   const [rightVideo, setRightVideo] = useState<VideoState>({ file: null, url: null });
@@ -19,6 +26,8 @@ const SplitPlayer = () => {
   const [showDrawingTools, setShowDrawingTools] = useState(false);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
   const [syncOffsets, setSyncOffsets] = useState({ left: 0, right: 0 });
+  const [leftDrawings, setLeftDrawings] = useState<Drawing[]>([]);
+  const [rightDrawings, setRightDrawings] = useState<Drawing[]>([]);
   
   const leftVideoRef = useRef<HTMLVideoElement>(null);
   const rightVideoRef = useRef<HTMLVideoElement>(null);
@@ -52,10 +61,12 @@ const SplitPlayer = () => {
     if (side === 'left') {
       if (leftVideo.url) URL.revokeObjectURL(leftVideo.url);
       setLeftVideo({ file: null, url: null });
+      setLeftDrawings([]);
       setIsSynced(false);
     } else {
       if (rightVideo.url) URL.revokeObjectURL(rightVideo.url);
       setRightVideo({ file: null, url: null });
+      setRightDrawings([]);
       setIsSynced(false);
     }
   };
@@ -65,7 +76,6 @@ const SplitPlayer = () => {
     setIsSynced(newSyncState);
     
     if (newSyncState && leftVideoRef.current && rightVideoRef.current) {
-      // Store the current times when syncing
       setSyncOffsets({
         left: leftVideoRef.current.currentTime,
         right: rightVideoRef.current.currentTime
@@ -126,21 +136,20 @@ const SplitPlayer = () => {
       };
 
       if (leftVideo.url) {
-        const leftVideoBlob = await fetch(leftVideo.url).then(r => r.blob());
         exportData.leftVideo = {
-          blob: leftVideoBlob,
-          drawings: leftCanvasRef.current?.getDrawings()
+          url: leftVideo.url,
+          drawings: leftDrawings
         };
       }
 
       if (rightVideo.url) {
-        const rightVideoBlob = await fetch(rightVideo.url).then(r => r.blob());
         exportData.rightVideo = {
-          blob: rightVideoBlob,
-          drawings: rightCanvasRef.current?.getDrawings()
+          url: rightVideo.url,
+          drawings: rightDrawings
         };
       }
 
+      // For now we'll save as JSON, but this will be updated for proper video saving
       const blob = new Blob([JSON.stringify(exportData)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -159,7 +168,7 @@ const SplitPlayer = () => {
       {/* Drawing Tools Toggle */}
       <motion.button
         onClick={() => setShowDrawingTools(!showDrawingTools)}
-        className="fixed bottom-60 left-1/2 -translate-x-1/2 z-50 p-2 rounded-full bg-black/50 text-white"
+        className="fixed top-4 right-4 z-50 p-2 rounded-full bg-black/50 text-white"
         whileHover={{ scale: 1.1 }}
       >
         <Pen className={`w-6 h-6 ${showDrawingTools ? 'text-yellow-400' : 'text-white'}`} />
@@ -189,7 +198,9 @@ const SplitPlayer = () => {
                 <DrawingCanvas 
                   ref={leftCanvasRef}
                   width={canvasDimensions.width} 
-                  height={canvasDimensions.height} 
+                  height={canvasDimensions.height}
+                  savedDrawings={leftDrawings}
+                  onDrawingsChange={setLeftDrawings}
                 />
               )}
               <button
@@ -228,7 +239,9 @@ const SplitPlayer = () => {
                 <DrawingCanvas 
                   ref={rightCanvasRef}
                   width={canvasDimensions.width} 
-                  height={canvasDimensions.height} 
+                  height={canvasDimensions.height}
+                  savedDrawings={rightDrawings}
+                  onDrawingsChange={setRightDrawings}
                 />
               )}
               <button
