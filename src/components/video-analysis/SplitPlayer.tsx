@@ -259,32 +259,37 @@ const SplitPlayer = () => {
       </div>
 
       {(leftVideo.url || rightVideo.url) && (
-        <>
-          <div className="fixed bottom-48 left-1/2 -translate-x-1/2 z-50">
-            <motion.button
-              onClick={handleSave}
-              className="px-6 py-2 rounded-full bg-white/20 text-white hover:bg-white/30"
-              whileTap={{ scale: 0.95 }}
-            >
-              <Download className="w-6 h-6" />
-            </motion.button>
-          </div>
+  <>
+    <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-50">
+      <motion.button
+        onClick={() => setShowDrawingTools(!showDrawingTools)}
+        className="px-6 py-2 rounded-full bg-white/20 text-white hover:bg-white/30 mb-4"
+        whileTap={{ scale: 0.95 }}
+      >
+        <Pen className={`w-6 h-6 ${showDrawingTools ? 'text-yellow-400' : 'text-white'}`} />
+      </motion.button>
+      <motion.button
+        onClick={handleSave}
+        className="px-6 py-2 rounded-full bg-white/20 text-white hover:bg-white/30"
+        whileTap={{ scale: 0.95 }}
+      >
+        <Download className="w-6 h-6" />
+      </motion.button>
+    </div>
 
-          <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-50">
-            <motion.button
-              onClick={handleSync}
-              className={`px-6 py-2 rounded-full text-sm font-medium ${
-                isSynced 
-                  ? 'bg-yellow-400 text-black' 
-                  : 'bg-white/20 text-white hover:bg-white/30'
-              }`}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isSynced ? 'SYNCED' : 'SYNC'}
-            </motion.button>
-          </div>
-        </>
-      )}
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50">
+      <motion.button
+        onClick={handleSync}
+        className={`px-6 py-2 rounded-full text-sm font-medium ${
+          isSynced ? 'bg-yellow-400 text-black' : 'bg-white/20 text-white hover:bg-white/30'
+        }`}
+        whileTap={{ scale: 0.95 }}
+      >
+        {isSynced ? 'SYNCED' : 'SYNC'}
+      </motion.button>
+    </div>
+  </>
+)} 
     </div>
   );
 };
