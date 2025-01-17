@@ -5,17 +5,13 @@ import { Play, Pause } from 'lucide-react';
 
 interface VideoControlsProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
+  containerWidth: number;
   onFrameStep?: (direction: 'forward' | 'backward') => void;
-  containerWidth?: number;
 }
 
 const PLAYBACK_SPEEDS = [2, 1.5, 1, 0.5, 0.25, 0.125];
 
-const VideoControls: React.FC<VideoControlsProps> = ({ 
-  videoRef, 
-  onFrameStep,
-  containerWidth 
-}) => {
+const VideoControls: React.FC<VideoControlsProps> = ({ videoRef, containerWidth, onFrameStep }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -54,6 +50,35 @@ const VideoControls: React.FC<VideoControlsProps> = ({
       e.preventDefault();
       updateTimeFromTouch(e);
     }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    updateTimeFromMouse(e);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging) {
+      updateTimeFromMouse(e);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const updateTimeFromMouse = (e: React.MouseEvent) => {
+    const video = videoRef.current;
+    const scrubber = scrubberRef.current;
+    if (!video || !scrubber) return;
+
+    const rect = scrubber.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, x / rect.width));
+    const newTime = percentage * duration;
+
+    setCurrentTime(newTime);
+    video.currentTime = newTime;
   };
 
   const updateTimeFromTouch = (e: React.TouchEvent) => {
@@ -108,8 +133,7 @@ const VideoControls: React.FC<VideoControlsProps> = ({
   };
 
   return (
-    <div className={`fixed bottom-0 px-4 py-2 z-50 bg-gradient-to-t from-black/80 to-transparent`}
-    style={{ width: containerWidth }}>
+    <div className="fixed bottom-0 px-4 py-2 z-50 bg-gradient-to-t from-black/80 to-transparent" style={{ width: containerWidth }}>
       <div className="text-white text-xs mb-1">
         {formatTime(currentTime)}
       </div>
@@ -120,6 +144,10 @@ const VideoControls: React.FC<VideoControlsProps> = ({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={() => setIsDragging(false)}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
       >
         <div className="absolute inset-0 flex items-center">
           {Array.from({ length: 30 }).map((_, i) => (
@@ -171,7 +199,7 @@ const VideoControls: React.FC<VideoControlsProps> = ({
           </button>
         </div>
 
-        <div className="w-8" /> {/* Spacer to balance layout */}
+        <div className="w-8" />
       </div>
     </div>
   );
