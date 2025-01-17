@@ -203,44 +203,44 @@ const SplitPlayer = () => {
       <div ref={containerRef} className="flex-1 flex flex-row">
         <div className="flex-1 relative">
           {leftVideo.url && (
-            <button
-              onClick={() => removeVideo('left')}
-              className="absolute top-4 left-4 p-2 rounded-full bg-black/50 text-white hover:bg-white/20 z-50"
-            >
-              <X className="w-6 h-6" />
-            </button>
+            <div className="absolute top-4 left-16 z-50 flex items-center gap-2">
+              <button
+                onClick={() => removeVideo('left')}
+                className="p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
           )}
           
           {!leftVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'left')} side="left" />
           ) : (
             <motion.div 
-              className="h-full flex flex-col"
+              className="h-full relative"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <div className="flex-1 relative">
-                <video
-                  ref={leftVideoRef}
-                  src={leftVideo.url}
-                  className="absolute inset-0 w-full h-full object-contain"
-                  playsInline
-                  onPlay={() => handleVideoPlay('left')}
-                  onPause={() => handleVideoPause('left')}
-                  onTimeUpdate={() => handleVideoTimeUpdate('left')}
-                  onRateChange={() => handlePlaybackRateChange('left')}
+              <video
+                ref={leftVideoRef}
+                src={leftVideo.url}
+                className="absolute inset-0 w-full h-full object-contain"
+                playsInline
+                onPlay={() => handleVideoPlay('left')}
+                onPause={() => handleVideoPause('left')}
+                onTimeUpdate={() => handleVideoTimeUpdate('left')}
+                onRateChange={() => handlePlaybackRateChange('left')}
+              />
+              {canvasDimensions.width > 0 && showDrawingTools && (
+                <DrawingCanvas 
+                  ref={leftCanvasRef}
+                  width={canvasDimensions.width} 
+                  height={canvasDimensions.height}
+                  savedDrawings={leftDrawings}
+                  onDrawingsChange={setLeftDrawings}
                 />
-                {canvasDimensions.width > 0 && showDrawingTools && (
-                  <DrawingCanvas 
-                    ref={leftCanvasRef}
-                    width={canvasDimensions.width} 
-                    height={canvasDimensions.height}
-                    savedDrawings={leftDrawings}
-                    onDrawingsChange={setLeftDrawings}
-                  />
-                )}
-              </div>
-              <div className="relative z-20">
+              )}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
                 <VideoControls videoRef={leftVideoRef} />
               </div>
             </motion.div>
@@ -261,32 +261,30 @@ const SplitPlayer = () => {
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'right')} side="right" />
           ) : (
             <motion.div 
-              className="h-full flex flex-col"
+              className="h-full relative"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <div className="flex-1 relative">
-                <video
-                  ref={rightVideoRef}
-                  src={rightVideo.url}
-                  className="absolute inset-0 w-full h-full object-contain"
-                  playsInline
-                  onPlay={() => handleVideoPlay('right')}
-                  onPause={() => handleVideoPause('right')}
-                  onTimeUpdate={() => handleVideoTimeUpdate('right')}
-                  onRateChange={() => handlePlaybackRateChange('right')}
+              <video
+                ref={rightVideoRef}
+                src={rightVideo.url}
+                className="absolute inset-0 w-full h-full object-contain"
+                playsInline
+                onPlay={() => handleVideoPlay('right')}
+                onPause={() => handleVideoPause('right')}
+                onTimeUpdate={() => handleVideoTimeUpdate('right')}
+                onRateChange={() => handlePlaybackRateChange('right')}
+              />
+              {canvasDimensions.width > 0 && showDrawingTools && (
+                <DrawingCanvas 
+                  ref={rightCanvasRef}
+                  width={canvasDimensions.width} 
+                  height={canvasDimensions.height}
+                  savedDrawings={rightDrawings}
+                  onDrawingsChange={setRightDrawings}
                 />
-                {canvasDimensions.width > 0 && showDrawingTools && (
-                  <DrawingCanvas 
-                    ref={rightCanvasRef}
-                    width={canvasDimensions.width} 
-                    height={canvasDimensions.height}
-                    savedDrawings={rightDrawings}
-                    onDrawingsChange={setRightDrawings}
-                  />
-                )}
-              </div>
-              <div className="relative z-20">
+              )}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
                 <VideoControls videoRef={rightVideoRef} />
               </div>
             </motion.div>
