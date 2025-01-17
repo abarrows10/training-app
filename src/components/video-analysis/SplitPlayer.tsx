@@ -39,7 +39,7 @@ const SplitPlayer = () => {
     const updateDimensions = () => {
       if (containerRef.current) {
         const { width, height } = containerRef.current.getBoundingClientRect();
-        setCanvasDimensions({ width: width / 2, height: height - 160 }); // Account for controls height
+        setCanvasDimensions({ width: width / 2, height });
       }
     };
 
@@ -164,80 +164,62 @@ const SplitPlayer = () => {
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col h-screen">
-      {/* Header Bar */}
-      <div className="w-full h-16 bg-black/50 backdrop-blur-sm flex justify-between items-center px-4 z-50">
-        {/* Left Video X */}
-        <div className="flex-1 flex items-center">
-          {leftVideo.url && (
-            <button
-              onClick={() => removeVideo('left')}
+      {/* Top Controls */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-4 items-center z-50">
+        <motion.button
+          onClick={() => setShowDrawingTools(!showDrawingTools)}
+          className="p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
+          whileTap={{ scale: 0.95 }}
+        >
+          <Pen className={`w-6 h-6 ${showDrawingTools ? 'text-yellow-400' : 'text-white'}`} />
+        </motion.button>
+
+        {(leftVideo.url || rightVideo.url) && (
+          <>
+            <motion.button
+              onClick={handleSave}
               className="p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
+              whileTap={{ scale: 0.95 }}
             >
-              <X className="w-6 h-6" />
-            </button>
-          )}
-        </div>
+              <Download className="w-6 h-6" />
+            </motion.button>
 
-        {/* Center Controls */}
-        <div className="flex gap-4 items-center">
-          <motion.button
-            onClick={() => setShowDrawingTools(!showDrawingTools)}
-            className="p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
-            whileTap={{ scale: 0.95 }}
-          >
-            <Pen className={`w-6 h-6 ${showDrawingTools ? 'text-yellow-400' : 'text-white'}`} />
-          </motion.button>
-
-          {(leftVideo.url || rightVideo.url) && (
-            <>
-              <motion.button
-                onClick={handleSave}
-                className="p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
-                whileTap={{ scale: 0.95 }}
-              >
-                <Download className="w-6 h-6" />
-              </motion.button>
-
-              <motion.button
-                onClick={handleSync}
-                className={`px-4 py-2 rounded-full text-sm font-medium ${
-                  isSynced 
-                    ? 'bg-yellow-400 text-black' 
-                    : 'bg-black/50 text-white hover:bg-white/20'
-                }`}
-                whileTap={{ scale: 0.95 }}
-              >
-                {isSynced ? 'SYNCED' : 'SYNC'}
-              </motion.button>
-            </>
-          )}
-        </div>
-
-        {/* Right Video X */}
-        <div className="flex-1 flex justify-end">
-          {rightVideo.url && (
-            <button
-              onClick={() => removeVideo('right')}
-              className="p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
+            <motion.button
+              onClick={handleSync}
+              className={`px-4 py-2 rounded-full text-sm font-medium ${
+                isSynced 
+                  ? 'bg-yellow-400 text-black' 
+                  : 'bg-black/50 text-white hover:bg-white/20'
+              }`}
+              whileTap={{ scale: 0.95 }}
             >
-              <X className="w-6 h-6" />
-            </button>
-          )}
-        </div>
+              {isSynced ? 'SYNCED' : 'SYNC'}
+            </motion.button>
+          </>
+        )}
       </div>
 
       {/* Video Container */}
-      <div ref={containerRef} className="flex-1 flex flex-row overflow-hidden">
-        <div className="flex-1 flex flex-col h-full">
+      <div ref={containerRef} className="flex-1 flex flex-row">
+        <div className="flex-1 relative">
+          {leftVideo.url && (
+            <button
+              onClick={() => removeVideo('left')}
+              className="absolute top-4 left-4 p-2 rounded-full bg-black/50 text-white hover:bg-white/20 z-50"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          )}
+          
           {!leftVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'left')} side="left" />
           ) : (
             <motion.div 
-              className="relative flex-1 flex flex-col"
+              className="h-full flex flex-col"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <div className="relative flex-1">
+              <div className="flex-1 relative">
                 <video
                   ref={leftVideoRef}
                   src={leftVideo.url}
@@ -258,23 +240,32 @@ const SplitPlayer = () => {
                   />
                 )}
               </div>
-              <div className="flex-shrink-0 w-full">
+              <div className="relative z-20">
                 <VideoControls videoRef={leftVideoRef} />
               </div>
             </motion.div>
           )}
         </div>
 
-        <div className="flex-1 flex flex-col h-full">
+        <div className="flex-1 relative">
+          {rightVideo.url && (
+            <button
+              onClick={() => removeVideo('right')}
+              className="absolute top-4 right-4 p-2 rounded-full bg-black/50 text-white hover:bg-white/20 z-50"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          )}
+          
           {!rightVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'right')} side="right" />
           ) : (
             <motion.div 
-              className="relative flex-1 flex flex-col pb-[120px] md:pb-[100px]"
+              className="h-full flex flex-col"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <div className="relative flex-1">
+              <div className="flex-1 relative">
                 <video
                   ref={rightVideoRef}
                   src={rightVideo.url}
@@ -295,7 +286,7 @@ const SplitPlayer = () => {
                   />
                 )}
               </div>
-              <div className="w-full fixed bottom-0 left-0 right-0 z-30">
+              <div className="relative z-20">
                 <VideoControls videoRef={rightVideoRef} />
               </div>
             </motion.div>
