@@ -165,16 +165,70 @@ const SplitPlayer = () => {
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col h-screen">
-      {/* Drawing Tools Toggle */}
-      <motion.button
-        onClick={() => setShowDrawingTools(!showDrawingTools)}
-        className="fixed top-4 right-4 z-50 p-2 rounded-full bg-black/50 text-white"
-        whileHover={{ scale: 1.1 }}
-      >
-        <Pen className={`w-6 h-6 ${showDrawingTools ? 'text-yellow-400' : 'text-white'}`} />
-      </motion.button>
+      {/* Header Bar */}
+      <div className="w-full h-16 bg-black/50 backdrop-blur-sm flex justify-between items-center px-4 z-50">
+        {/* Left Video X */}
+        <div className="flex-1">
+          {leftVideo.url && (
+            <button
+              onClick={() => removeVideo('left')}
+              className="p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          )}
+        </div>
 
-      <div ref={containerRef} className="flex-1 flex flex-row pb-32">
+        {/* Center Controls */}
+        <div className="flex gap-4 items-center">
+          <motion.button
+            onClick={() => setShowDrawingTools(!showDrawingTools)}
+            className="p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
+            whileTap={{ scale: 0.95 }}
+          >
+            <Pen className={`w-6 h-6 ${showDrawingTools ? 'text-yellow-400' : 'text-white'}`} />
+          </motion.button>
+
+          {(leftVideo.url || rightVideo.url) && (
+            <>
+              <motion.button
+                onClick={handleSave}
+                className="p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
+                whileTap={{ scale: 0.95 }}
+              >
+                <Download className="w-6 h-6" />
+              </motion.button>
+
+              <motion.button
+                onClick={handleSync}
+                className={`px-4 py-2 rounded-full text-sm font-medium ${
+                  isSynced 
+                    ? 'bg-yellow-400 text-black' 
+                    : 'bg-black/50 text-white hover:bg-white/20'
+                }`}
+                whileTap={{ scale: 0.95 }}
+              >
+                {isSynced ? 'SYNCED' : 'SYNC'}
+              </motion.button>
+            </>
+          )}
+        </div>
+
+        {/* Right Video X */}
+        <div className="flex-1 flex justify-end">
+          {rightVideo.url && (
+            <button
+              onClick={() => removeVideo('right')}
+              className="p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Video Container */}
+      <div ref={containerRef} className="flex-1 flex flex-row">
         <div className="flex-1 relative">
           {!leftVideo.url ? (
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'left')} side="left" />
@@ -203,12 +257,6 @@ const SplitPlayer = () => {
                   onDrawingsChange={setLeftDrawings}
                 />
               )}
-              <button
-                onClick={() => removeVideo('left')}
-                className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
-              >
-                <X className="w-6 h-6" />
-              </button>
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={leftVideoRef} />
               </div>
@@ -244,12 +292,6 @@ const SplitPlayer = () => {
                   onDrawingsChange={setRightDrawings}
                 />
               )}
-              <button
-                onClick={() => removeVideo('right')}
-                className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/50 text-white hover:bg-white/20"
-              >
-                <X className="w-6 h-6" />
-              </button>
               <div className="absolute bottom-0 left-0 right-0 z-10">
                 <VideoControls videoRef={rightVideoRef} />
               </div>
@@ -257,39 +299,6 @@ const SplitPlayer = () => {
           )}
         </div>
       </div>
-
-      {(leftVideo.url || rightVideo.url) && (
-  <>
-    <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-50">
-      <motion.button
-        onClick={() => setShowDrawingTools(!showDrawingTools)}
-        className="px-6 py-2 rounded-full bg-white/20 text-white hover:bg-white/30 mb-4"
-        whileTap={{ scale: 0.95 }}
-      >
-        <Pen className={`w-6 h-6 ${showDrawingTools ? 'text-yellow-400' : 'text-white'}`} />
-      </motion.button>
-      <motion.button
-        onClick={handleSave}
-        className="px-6 py-2 rounded-full bg-white/20 text-white hover:bg-white/30"
-        whileTap={{ scale: 0.95 }}
-      >
-        <Download className="w-6 h-6" />
-      </motion.button>
-    </div>
-
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50">
-      <motion.button
-        onClick={handleSync}
-        className={`px-6 py-2 rounded-full text-sm font-medium ${
-          isSynced ? 'bg-yellow-400 text-black' : 'bg-white/20 text-white hover:bg-white/30'
-        }`}
-        whileTap={{ scale: 0.95 }}
-      >
-        {isSynced ? 'SYNCED' : 'SYNC'}
-      </motion.button>
-    </div>
-  </>
-)} 
     </div>
   );
 };
