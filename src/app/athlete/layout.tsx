@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Dumbbell, Home, Menu, X } from 'lucide-react';
+import { Dumbbell, Home, Menu, X, User, LogOut } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AthleteLayout({
   children,
@@ -12,13 +13,23 @@ export default function AthleteLayout({
 }) {
   const pathname = usePathname();
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const { logout } = useAuth();
   
   const navItems = [
+    { href: '/account', label: 'Account', icon: User },
     { href: '/athlete/workouts', label: 'My Workouts', icon: Dumbbell },
   ];
 
   const closeNav = () => {
     setIsNavOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -51,6 +62,7 @@ export default function AthleteLayout({
           <Home className="w-7 h-7" />
           Blakely & Baylor's Training
         </Link>
+
         <div className="space-y-2">
           {navItems.map(({ href, label, icon: Icon }) => (
             <Link
@@ -69,6 +81,14 @@ export default function AthleteLayout({
               {label}
             </Link>
           ))}
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-500 hover:bg-[#3A3B3C] transition-all duration-200"
+          >
+            <LogOut className="w-5 h-5" />
+            Sign Out
+          </button>
         </div>
       </nav>
 
