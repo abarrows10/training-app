@@ -167,7 +167,7 @@ const SplitPlayer = () => {
       {/* Header Bar */}
       <div className="w-full h-16 bg-black/50 backdrop-blur-sm flex justify-between items-center px-4 z-50">
         {/* Left Video X */}
-        <div className="flex-1">
+        <div className="flex-1 flex items-center">
           {leftVideo.url && (
             <button
               onClick={() => removeVideo('left')}
@@ -270,7 +270,7 @@ const SplitPlayer = () => {
             <VideoAnalysisUploader onFileSelect={(file) => handleFileSelect(file, 'right')} side="right" />
           ) : (
             <motion.div 
-              className="relative flex-1 flex flex-col"
+              className="relative flex-1 flex flex-col pb-[120px] md:pb-[100px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
@@ -295,7 +295,7 @@ const SplitPlayer = () => {
                   />
                 )}
               </div>
-              <div className="flex-shrink-0 w-full">
+              <div className="w-full fixed bottom-0 left-0 right-0 z-30">
                 <VideoControls videoRef={rightVideoRef} />
               </div>
             </motion.div>
