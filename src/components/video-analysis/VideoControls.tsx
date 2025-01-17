@@ -6,11 +6,16 @@ import { Play, Pause } from 'lucide-react';
 interface VideoControlsProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   onFrameStep?: (direction: 'forward' | 'backward') => void;
+  containerWidth?: number;
 }
 
 const PLAYBACK_SPEEDS = [2, 1.5, 1, 0.5, 0.25, 0.125];
 
-const VideoControls: React.FC<VideoControlsProps> = ({ videoRef, onFrameStep }) => {
+const VideoControls: React.FC<VideoControlsProps> = ({ 
+  videoRef, 
+  onFrameStep,
+  containerWidth 
+}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -103,7 +108,8 @@ const VideoControls: React.FC<VideoControlsProps> = ({ videoRef, onFrameStep }) 
   };
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 px-4 py-2 z-30">
+    <div className={`fixed bottom-0 px-4 py-2 z-50 bg-gradient-to-t from-black/80 to-transparent`}
+    style={{ width: containerWidth }}>
       <div className="text-white text-xs mb-1">
         {formatTime(currentTime)}
       </div>

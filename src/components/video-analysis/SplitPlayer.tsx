@@ -28,6 +28,7 @@ const SplitPlayer = () => {
   const [syncOffsets, setSyncOffsets] = useState({ left: 0, right: 0 });
   const [leftDrawings, setLeftDrawings] = useState<Drawing[]>([]);
   const [rightDrawings, setRightDrawings] = useState<Drawing[]>([]);
+  const [videoWidths, setVideoWidths] = useState({ left: 0, right: 0 });
   
   const leftVideoRef = useRef<HTMLVideoElement>(null);
   const rightVideoRef = useRef<HTMLVideoElement>(null);
@@ -38,11 +39,12 @@ const SplitPlayer = () => {
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
-        const { width, height } = containerRef.current.getBoundingClientRect();
-        setCanvasDimensions({ width: width / 2, height });
+        const width = containerRef.current.getBoundingClientRect().width / 2;
+        setVideoWidths({ left: width, right: width });
+        setCanvasDimensions({ width, height: containerRef.current.getBoundingClientRect().height });
       }
     };
-
+  
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
@@ -241,7 +243,7 @@ const SplitPlayer = () => {
                 />
               )}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
-                <VideoControls videoRef={leftVideoRef} />
+              <VideoControls videoRef={leftVideoRef} containerWidth={videoWidths.left} />
               </div>
             </motion.div>
           )}
@@ -285,7 +287,7 @@ const SplitPlayer = () => {
                 />
               )}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
-                <VideoControls videoRef={rightVideoRef} />
+              <VideoControls videoRef={rightVideoRef} containerWidth={videoWidths.right} />
               </div>
             </motion.div>
           )}
