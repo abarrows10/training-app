@@ -22,7 +22,7 @@ export default function Home() {
   </Link>
   <Link
     href="/coach/video-analysis"
-    className="block w-full p-4 text-center bg-[#00A3E0] text-white font-bold rounded-lg hover:bg-[#0077A3] transition-colors"
+    className="block w-full p-4 text-center bg-[#ff0000] text-white font-bold rounded-lg hover:bg-[#0077A3] transition-colors"
   >
     Video Analysis
   </Link>
