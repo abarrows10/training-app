@@ -8,6 +8,7 @@ interface DrawingCanvasProps {
   height: number;
   onDrawingsChange?: (drawings: Drawing[]) => void;
   savedDrawings?: Drawing[];
+  showTools?: boolean;
 }
 
 type DrawingMode = 'freehand' | 'line' | 'circle' | 'rectangle' | 'triangle' | 'arrow' | 'text';
@@ -25,7 +26,7 @@ interface Drawing {
   text?: string;
 }
 
-const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDrawingsChange, savedDrawings = [] }, ref) => {
+const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDrawingsChange, savedDrawings = [], showTools = false }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -290,7 +291,7 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
           style={{ touchAction: 'none' }}
         />
       </div>
-
+   
       {showTextInput && (
         <input
           type="text"
@@ -317,80 +318,82 @@ const DrawingCanvas = forwardRef<any, DrawingCanvasProps>(({ width, height, onDr
           autoFocus
         />
       )}
-
-      {/* Drawing Tools */}
-      <div className="absolute right-4 top-28 flex flex-col gap-2">
-        <button
-          onClick={() => setMode('freehand')}
-          className={`p-2 rounded-full ${mode === 'freehand' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
-        >
-          <Pencil className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setMode('line')}
-          className={`p-2 rounded-full ${mode === 'line' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
-        >
-          <div className="w-5 h-5 rotate-45 border-b-2" />
-        </button>
-        <button
-          onClick={() => setMode('circle')}
-          className={`p-2 rounded-full ${mode === 'circle' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
-        >
-          <Circle className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setMode('rectangle')}
-          className={`p-2 rounded-full ${mode === 'rectangle' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
-        >
-          <Square className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setMode('triangle')}
-          className={`p-2 rounded-full ${mode === 'triangle' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
-        >
-          <Triangle className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setMode('arrow')}
-          className={`p-2 rounded-full ${mode === 'arrow' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
-        >
-          <ArrowRight className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setMode('text')}
-          className={`p-2 rounded-full ${mode === 'text' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
-        >
-          <Type className="w-5 h-5" />
-        </button>
-        <button
-          onClick={undoLastDrawing}
-          className="p-2 rounded-full bg-black/50 text-white hover:bg-white hover:text-black"
-        >
-          <Undo className="w-5 h-5" />
-        </button>
-        <button
-          onClick={clearCanvas}
-          className="p-2 rounded-full bg-black/50 text-white hover:bg-white hover:text-black"
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Color Picker */}
-      <div className="absolute right-16 top-28 flex flex-col gap-2">
-        {['yellow', 'red', 'white', 'blue'].map((c) => (
-          <button
-            key={c}
-            onClick={() => setColor(c as DrawingColor)}
-            className={`w-8 h-8 rounded-full border-2 ${
-              color === c ? 'border-white' : 'border-transparent'
-            }`}
-            style={{ backgroundColor: c }}
-          />
-        ))}
-      </div>
+   
+      {showTools && (
+        <>
+          <div className="absolute right-4 top-28 flex flex-col gap-2">
+            <button
+              onClick={() => setMode('freehand')}
+              className={`p-2 rounded-full ${mode === 'freehand' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+            >
+              <Pencil className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setMode('line')}
+              className={`p-2 rounded-full ${mode === 'line' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+            >
+              <div className="w-5 h-5 rotate-45 border-b-2" />
+            </button>
+            <button
+              onClick={() => setMode('circle')}
+              className={`p-2 rounded-full ${mode === 'circle' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+            >
+              <Circle className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setMode('rectangle')}
+              className={`p-2 rounded-full ${mode === 'rectangle' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+            >
+              <Square className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setMode('triangle')}
+              className={`p-2 rounded-full ${mode === 'triangle' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+            >
+              <Triangle className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setMode('arrow')}
+              className={`p-2 rounded-full ${mode === 'arrow' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+            >
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setMode('text')}
+              className={`p-2 rounded-full ${mode === 'text' ? 'bg-white text-black' : 'bg-black/50 text-white'}`}
+            >
+              <Type className="w-5 h-5" />
+            </button>
+            <button
+              onClick={undoLastDrawing}
+              className="p-2 rounded-full bg-black/50 text-white hover:bg-white hover:text-black"
+            >
+              <Undo className="w-5 h-5" />
+            </button>
+            <button
+              onClick={clearCanvas}
+              className="p-2 rounded-full bg-black/50 text-white hover:bg-white hover:text-black"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+   
+          <div className="absolute right-16 top-28 flex flex-col gap-2">
+            {['yellow', 'red', 'white', 'blue'].map((c) => (
+              <button
+                key={c}
+                onClick={() => setColor(c as DrawingColor)}
+                className={`w-8 h-8 rounded-full border-2 ${
+                  color === c ? 'border-white' : 'border-transparent'
+                }`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </>
-  );
+   );
 });
 
 DrawingCanvas.displayName = 'DrawingCanvas';

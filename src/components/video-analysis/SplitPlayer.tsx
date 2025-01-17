@@ -233,13 +233,14 @@ const SplitPlayer = () => {
                 onTimeUpdate={() => handleVideoTimeUpdate('left')}
                 onRateChange={() => handlePlaybackRateChange('left')}
               />
-              {canvasDimensions.width > 0 && showDrawingTools && (
+              {canvasDimensions.width > 0 && (
                 <DrawingCanvas 
                   ref={leftCanvasRef}
                   width={canvasDimensions.width} 
                   height={canvasDimensions.height}
                   savedDrawings={leftDrawings}
                   onDrawingsChange={setLeftDrawings}
+                  showTools={showDrawingTools}
                 />
               )}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
@@ -277,15 +278,16 @@ const SplitPlayer = () => {
                 onTimeUpdate={() => handleVideoTimeUpdate('right')}
                 onRateChange={() => handlePlaybackRateChange('right')}
               />
-              {canvasDimensions.width > 0 && showDrawingTools && (
-                <DrawingCanvas 
-                  ref={rightCanvasRef}
-                  width={canvasDimensions.width} 
-                  height={canvasDimensions.height}
-                  savedDrawings={rightDrawings}
-                  onDrawingsChange={setRightDrawings}
-                />
-              )}
+              {canvasDimensions.width > 0 && (
+                  <DrawingCanvas 
+                    ref={rightCanvasRef}
+                    width={canvasDimensions.width} 
+                    height={canvasDimensions.height}
+                    savedDrawings={rightDrawings}
+                    onDrawingsChange={setRightDrawings}
+                    showTools={showDrawingTools}
+                  />
+                )}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent">
               <VideoControls videoRef={rightVideoRef} containerWidth={videoWidths.right} />
               </div>
