@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Dumbbell, User, Users, Calendar, PlaySquare, Home, Menu, X, LogOut } from 'lucide-react';
+import { Dumbbell, User, Users, Calendar, PlaySquare, Home, Menu, X, ChartNoAxesCombined, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -23,7 +23,7 @@ export default function CoachLayout({
    { href: '/coach/assignments', label: 'Assignments', icon: Calendar },
    { href: '/coach/athletes', label: 'Athletes', icon: Users },
    { href: '/coach/videos', label: 'Videos', icon: PlaySquare },
-   { href: '/coach/analytics', label: 'Analytics', icon: User },
+   { href: '/coach/analytics', label: 'Analytics', icon: ChartNoAxesCombined },
  ];
 
  const closeNav = () => setIsNavOpen(false);
