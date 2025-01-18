@@ -18,6 +18,11 @@ if (process.env.NODE_ENV === 'development' && !firebaseConfig.projectId?.include
 }
 
 console.log('Firebase Config:', firebaseConfig);
+console.log('Initializing Firebase with config:', {
+  apiKey: firebaseConfig.apiKey,
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain
+});
 
 let app: FirebaseApp;
 let auth: Auth;
