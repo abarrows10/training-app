@@ -3,6 +3,20 @@ import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
+// Debug logging
+console.log('FIREBASE CONFIG USED:', {
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  environment: process.env.NODE_ENV
+});
+
+// Environment enforcement
+if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.includes('test')) {
+  console.error('WARNING: Not using test database!');
+  throw new Error('Must use test database in development');
+}
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -13,34 +27,19 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-if (process.env.NODE_ENV === 'development' && !firebaseConfig.projectId?.includes('test')) {
-  throw new Error('Must use test Firebase project in development');
-}
-
-console.log('Firebase Config:', firebaseConfig);
-console.log('Initializing Firebase with config:', {
-  apiKey: firebaseConfig.apiKey,
-  projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain
-});
+console.log('Initializing Firebase with config:', firebaseConfig);
 
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
-console.log('Current Firebase Project ID:', firebaseConfig.projectId);
-console.log('Current Environment:', process.env.NODE_ENV);
-
 try {
   app = initializeApp(firebaseConfig);
-  console.log('Firebase initialized successfully');
-  
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
-
-  console.log('Firebase services initialized');
+  console.log('Firebase services initialized successfully');
 } catch (error) {
   console.error('Firebase initialization error:', error);
   throw error;
