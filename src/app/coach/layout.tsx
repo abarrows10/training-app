@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Dumbbell, User, Users, Calendar, PlaySquare, Home, Menu, X, ChartNoAxesCombined, Video, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function CoachLayout({
  children,
@@ -13,6 +14,7 @@ export default function CoachLayout({
 }) {
  const pathname = usePathname();
  const [isNavOpen, setIsNavOpen] = useState(false);
+ const router = useRouter();
  const { logout } = useAuth();
  
  const navItems = [
@@ -32,6 +34,7 @@ export default function CoachLayout({
  const handleLogout = async () => {
    try {
      await logout();
+     router.push('/login');
    } catch (error) {
      console.error('Logout error:', error);
    }
