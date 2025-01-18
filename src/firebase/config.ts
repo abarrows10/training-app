@@ -13,6 +13,10 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
+if (process.env.NODE_ENV === 'development' && !firebaseConfig.projectId?.includes('test')) {
+  throw new Error('Must use test Firebase project in development');
+}
+
 console.log('Firebase Config:', firebaseConfig);
 
 let app: FirebaseApp;
