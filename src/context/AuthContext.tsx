@@ -77,10 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      if (!result.user.emailVerified) {
-        await sendEmailVerification(result.user);
-        throw new Error('Please verify your email before signing in.');
-      }
+      
       const token = await result.user.getIdToken();
       document.cookie = `authToken=${token}; path=/; SameSite=Strict; Secure`;
     } catch (error: any) {
@@ -92,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, role: UserRole) => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      await sendEmailVerification(result.user);
+      
       
       const userProfile: UserProfile = {
         email,

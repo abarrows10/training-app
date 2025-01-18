@@ -24,6 +24,9 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
+console.log('Current Firebase Project ID:', firebaseConfig.projectId);
+console.log('Current Environment:', process.env.NODE_ENV);
+
 try {
   app = initializeApp(firebaseConfig);
   console.log('Firebase initialized successfully');
