@@ -11,9 +11,9 @@ console.log('FIREBASE CONFIG USED:', {
   environment: process.env.NODE_ENV
 });
 
-// Environment enforcement
-if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.includes('test')) {
-  console.error('WARNING: Not using test database!');
+// Environment enforcement - only in development
+if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.includes('test')) {
+  console.error('WARNING: Not using test database in development!');
   throw new Error('Must use test database in development');
 }
 
