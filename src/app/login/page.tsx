@@ -3,38 +3,69 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+type Mode = 'signin' | 'signup' | 'reset';
+type Role = 'coach' | 'athlete';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [role, setRole] = useState('athlete');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [mode, setMode] = useState<Mode>('signin');
+  const [role, setRole] = useState<Role>('athlete');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const router = useRouter();
-  const { signIn, signUp, user, userRole } = useAuth();
+  const { signIn, signUp, user, profile } = useAuth();
 
   useEffect(() => {
-    if (user && userRole) {
-      if (userRole === 'coach') {
-        router.push('/coach/exercises');
-      } else {
-        router.push('/athlete/workouts');
-      }
+    if (user && profile) {
+      // Route based on user role
+      const routeUser = () => {
+        if (profile.isAdmin) {
+          router.push('/admin/dashboard');
+        } else if (profile.role === 'coach') {
+          router.push('/coach/exercises');
+        } else {
+          router.push('/athlete/workouts');
+        }
+      };
+      routeUser();
     }
-  }, [user, userRole, router]);
+  }, [user, profile, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+    setMessage('');
+
     try {
-      if (isSignUp) {
+      if (mode === 'signup') {
+        if (password !== confirmPassword) {
+          setError('Passwords do not match');
+          return;
+        }
+        if (password.length < 8) {
+          setError('Password must be at least 8 characters');
+          return;
+        }
         await signUp(email, password, role);
-      } else {
+        if (role === 'coach') {
+          router.push('/coach/exercises');
+        } else {
+          router.push('/athlete/workouts');
+        }
+      } else if (mode === 'signin') {
         await signIn(email, password);
+        // Router will handle redirect based on profile in useEffect
+      } else if (mode === 'reset') {
+        // Handle reset later
+        setMessage('Password reset instructions sent to your email.');
+        setMode('signin');
       }
     } catch (error: any) {
-      setError(error.message || (isSignUp ? 'Error creating account' : 'Invalid email or password'));
+      setError(error.message || (mode === 'signup' ? 'Error creating account' : 'Invalid email or password'));
     }
   };
 
@@ -46,9 +77,15 @@ export default function LoginPage() {
         </h1>
 
         {error && (
-          <div className="bg-red-500/10 text-red-500 p-3 rounded-lg mb-4">
-            {error}
-          </div>
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {message && (
+          <Alert className="mb-4 bg-green-500/10 text-green-500 border-green-500/20">
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -74,34 +111,67 @@ export default function LoginPage() {
             />
           </div>
 
-          {isSignUp && (
-            <div>
-              <label className="block text-gray-300 mb-1">Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full p-3 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-              >
-                <option value="athlete" className="bg-[#18191A]">Athlete</option>
-                <option value="coach" className="bg-[#18191A]">Coach</option>
-              </select>
-            </div>
+          {mode === 'signup' && (
+            <>
+              <div>
+                <label className="block text-gray-300 mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full p-3 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-300 mb-1">Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as Role)}
+                  className="w-full p-3 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                >
+                  <option value="athlete" className="bg-[#18191A]">Athlete</option>
+                  <option value="coach" className="bg-[#18191A]">Coach</option>
+                </select>
+              </div>
+            </>
           )}
 
           <button
             type="submit"
             className="w-full bg-[#00A3E0] text-white p-3 rounded-lg hover:bg-[#0077A3] transition-colors font-semibold"
           >
-            {isSignUp ? 'Sign Up' : 'Sign In'}
+            {mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Sign Up' : 'Reset Password'}
           </button>
         </form>
 
-        <button
-          onClick={() => setIsSignUp(!isSignUp)}
-          className="w-full mt-4 text-[#00A3E0] hover:text-[#0077A3] transition-colors"
-        >
-          {isSignUp ? 'Already have an account? Sign in' : 'Need an account? Sign up'}
-        </button>
+        <div className="mt-4 flex flex-col gap-2">
+          {mode === 'signin' && (
+            <>
+              <button
+                onClick={() => setMode('signup')}
+                className="w-full text-[#00A3E0] hover:text-[#0077A3] transition-colors"
+              >
+                Need an account? Sign up
+              </button>
+              <button
+                onClick={() => setMode('reset')}
+                className="w-full text-[#00A3E0] hover:text-[#0077A3] transition-colors"
+              >
+                Forgot password?
+              </button>
+            </>
+          )}
+          {(mode === 'signup' || mode === 'reset') && (
+            <button
+              onClick={() => setMode('signin')}
+              className="w-full text-[#00A3E0] hover:text-[#0077A3] transition-colors"
+            >
+              Already have an account? Sign in
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
