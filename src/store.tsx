@@ -2,6 +2,20 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { 
+  collection, 
+  doc, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc,
+  query,
+  onSnapshot,
+  setDoc,
+  where
+} from 'firebase/firestore';
+import { db } from '@/firebase/config';
+import { useAuth } from '@/context/AuthContext';
+import { 
   Exercise, 
   DrillSequence, 
   Workout, 
@@ -11,18 +25,6 @@ import {
   ScheduledWorkout,
   WorkoutItem
 } from '@/types/interfaces';
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc,
-  query,
-  onSnapshot,
-  setDoc
-} from 'firebase/firestore';
-import { db } from '@/firebase/config';
 
 interface StoreContextType {
   athletes: Athlete[];
@@ -68,150 +70,152 @@ interface StoreContextType {
     completionDates: string[];
   };
 }
-
 const StoreContext = createContext<StoreContextType | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-    const [athletes, setAthletes] = useState<Athlete[]>([]);
-    const [exercises, setExercises] = useState<Exercise[]>([]);
-    const [sequences, setSequences] = useState<DrillSequence[]>([]);
-    const [workouts, setWorkouts] = useState<Workout[]>([]);
-    const [scheduledWorkouts, setScheduledWorkouts] = useState<ScheduledWorkout[]>([]);
-    const [videos, setVideos] = useState<Video[]>([]);
-    const [progress, setProgress] = useState<ExerciseProgress[]>([]);
-  
-    useEffect(() => {
-      console.log('Setting up Firestore listeners');
-  
-      // Exercises listener
-      const unsubExercises = onSnapshot(
-        collection(db, 'exercises'),
-        (snapshot) => {
-          console.log('Received exercises update');
-          const exerciseData = snapshot.docs.map(doc => ({
-            ...doc.data(),
-            id: doc.id,
-            docId: doc.id,
-            videoIds: (doc.data().videoIds || []).map(String)
-          })) as Exercise[];
-          setExercises(exerciseData);
-        },
-        (error) => console.error('Exercises listener error:', error)
-      );
-  
-      // Athletes listener
-      const unsubAthletes = onSnapshot(
-        collection(db, 'athletes'),
-        (snapshot) => {
-          const athleteData = snapshot.docs.map(doc => ({
-            ...doc.data(),
-            id: doc.id
-          })) as Athlete[];
-          setAthletes(athleteData);
-        }
-      );
-  
-      // Sequences listener
-      const unsubSequences = onSnapshot(
-        collection(db, 'sequences'),
-        (snapshot) => {
-          const sequenceData = snapshot.docs.map(doc => ({
-            ...doc.data(),
-            id: doc.id,
-            drills: doc.data().drills.map((drill: any) => ({
-              ...drill,
-              id: String(drill.id),
-              exerciseId: String(drill.exerciseId)
-            }))
-          })) as DrillSequence[];
-          setSequences(sequenceData);
-        }
-      );
-  
-      // Workouts listener
-      const unsubWorkouts = onSnapshot(
-        collection(db, 'workouts'),
-        (snapshot) => {
-          const workoutData = snapshot.docs.map(doc => ({
-            ...doc.data(),
-            id: doc.id,
-            items: doc.data().items.map((item: any) => ({
-              ...item,
-              id: String(item.id),
-              itemId: String(item.itemId)
-            }))
-          })) as Workout[];
-          setWorkouts(workoutData);
-        }
-      );
-  
-      // Scheduled Workouts listener
-      const unsubScheduled = onSnapshot(
-        collection(db, 'scheduledWorkouts'),
-        (snapshot) => {
-          const scheduledData = snapshot.docs.map(doc => ({
-            ...doc.data(),
-            id: doc.id,
-            workoutId: String(doc.data().workoutId),
-            athleteId: String(doc.data().athleteId)
-          })) as ScheduledWorkout[];
-          setScheduledWorkouts(scheduledData);
-        }
-      );
-  
-      // Videos listener
-      const unsubVideos = onSnapshot(
-        collection(db, 'videos'),
-        (snapshot) => {
-          const videoData = snapshot.docs.map(doc => ({
-            ...doc.data(),
-            id: doc.id
-          })) as Video[];
-          setVideos(videoData);
-        }
-      );
-  
-      // Progress listener (update this section in store.tsx)
-    const unsubProgress = onSnapshot(
-        collection(db, 'progress'),
-        (snapshot) => {
-          const progressData = snapshot.docs.map(doc => ({
-            ...doc.data(),
-            id: doc.id,
-            exerciseId: String(doc.data().exerciseId),
-            athleteId: String(doc.data().athleteId),
-            workoutId: String(doc.data().workoutId),
-            scheduledWorkoutId: String(doc.data().scheduledWorkoutId),
-            date: doc.data().date || new Date().toISOString().split('T')[0],
-            timestamp: doc.data().timestamp || new Date().toISOString(),
-            completed: doc.data().completed || false,
-            category: doc.data().category || 'unknown',
-            setsCompleted: doc.data().setsCompleted || 0,
-            repsCompleted: doc.data().repsCompleted || 0,
-            targetSets: doc.data().targetSets,
-            targetReps: doc.data().targetReps
-          })) as ExerciseProgress[];
-          setProgress(progressData);
-        }
-      );
-  
-      return () => {
-        unsubExercises();
-        unsubAthletes();
-        unsubSequences();
-        unsubWorkouts();
-        unsubScheduled();
-        unsubVideos();
-        unsubProgress();
-      };
-    }, []);
+  const { user, profile } = useAuth();
+  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [sequences, setSequences] = useState<DrillSequence[]>([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [scheduledWorkouts, setScheduledWorkouts] = useState<ScheduledWorkout[]>([]);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [progress, setProgress] = useState<ExerciseProgress[]>([]);
 
-    // Exercise functions
+  useEffect(() => {
+    if (!user || !profile || profile.role !== 'coach') return;
+
+    console.log('Setting up Firestore listeners for coach:', user.uid);
+
+    // Exercises listener
+    const unsubExercises = onSnapshot(
+      collection(db, `coaches/${user.uid}/exercises`),
+      (snapshot) => {
+        const exerciseData = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id,
+          docId: doc.id,
+          videoIds: (doc.data().videoIds || []).map(String)
+        })) as Exercise[];
+        setExercises(exerciseData);
+      },
+      (error) => console.error('Exercises listener error:', error)
+    );
+
+    // Athletes listener
+    const unsubAthletes = onSnapshot(
+      collection(db, `coaches/${user.uid}/athletes`),
+      (snapshot) => {
+        const athleteData = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id
+        })) as Athlete[];
+        setAthletes(athleteData);
+      }
+    );
+
+    // Sequences listener
+    const unsubSequences = onSnapshot(
+      collection(db, `coaches/${user.uid}/sequences`),
+      (snapshot) => {
+        const sequenceData = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id,
+          drills: doc.data().drills.map((drill: any) => ({
+            ...drill,
+            id: String(drill.id),
+            exerciseId: String(drill.exerciseId)
+          }))
+        })) as DrillSequence[];
+        setSequences(sequenceData);
+      }
+    );
+
+    // Workouts listener
+    const unsubWorkouts = onSnapshot(
+      collection(db, `coaches/${user.uid}/workouts`),
+      (snapshot) => {
+        const workoutData = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id,
+          items: doc.data().items.map((item: any) => ({
+            ...item,
+            id: String(item.id),
+            itemId: String(item.itemId)
+          }))
+        })) as Workout[];
+        setWorkouts(workoutData);
+      }
+    );
+
+    // Scheduled Workouts listener
+    const unsubScheduled = onSnapshot(
+      collection(db, `coaches/${user.uid}/assignments`),
+      (snapshot) => {
+        const scheduledData = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id,
+          workoutId: String(doc.data().workoutId),
+          athleteId: String(doc.data().athleteId)
+        })) as ScheduledWorkout[];
+        setScheduledWorkouts(scheduledData);
+      }
+    );
+
+    // Videos listener
+    const unsubVideos = onSnapshot(
+      collection(db, `coaches/${user.uid}/videos`),
+      (snapshot) => {
+        const videoData = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id
+        })) as Video[];
+        setVideos(videoData);
+      }
+    );
+
+    // Progress listener
+    const unsubProgress = onSnapshot(
+      collection(db, `coaches/${user.uid}/progress`),
+      (snapshot) => {
+        const progressData = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id,
+          exerciseId: String(doc.data().exerciseId),
+          athleteId: String(doc.data().athleteId),
+          workoutId: String(doc.data().workoutId),
+          scheduledWorkoutId: String(doc.data().scheduledWorkoutId),
+          date: doc.data().date || new Date().toISOString().split('T')[0],
+          timestamp: doc.data().timestamp || new Date().toISOString(),
+          completed: doc.data().completed || false,
+          category: doc.data().category || 'unknown',
+          setsCompleted: doc.data().setsCompleted || 0,
+          repsCompleted: doc.data().repsCompleted || 0,
+          targetSets: doc.data().targetSets,
+          targetReps: doc.data().targetReps
+        })) as ExerciseProgress[];
+        setProgress(progressData);
+      }
+    );
+
+    return () => {
+      unsubExercises();
+      unsubAthletes();
+      unsubSequences();
+      unsubWorkouts();
+      unsubScheduled();
+      unsubVideos();
+      unsubProgress();
+    };
+  }, [user, profile]);
+
+  // Exercise functions
   const addExercise = async (exercise: Omit<Exercise, 'id' | 'docId'>) => {
+    if (!user) throw new Error('Not authenticated');
     try {
-      console.log('Adding exercise:', exercise);
-      const docRef = await addDoc(collection(db, 'exercises'), {
+      const docRef = await addDoc(collection(db, `coaches/${user.uid}/exercises`), {
         ...exercise,
+        coachId: user.uid,
         videoIds: (exercise.videoIds || []).map(String)
       });
       console.log('Exercise added with ID:', docRef.id);
@@ -222,9 +226,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateExercise = async (id: string, exercise: Omit<Exercise, 'id' | 'docId'>) => {
+    if (!user) throw new Error('Not authenticated');
     try {
-      await updateDoc(doc(db, 'exercises', id), {
+      await updateDoc(doc(db, `coaches/${user.uid}/exercises`, id), {
         ...exercise,
+        coachId: user.uid,
         videoIds: (exercise.videoIds || []).map(String)
       });
     } catch (error) {
@@ -234,8 +240,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeExercise = async (id: string) => {
+    if (!user) throw new Error('Not authenticated');
     try {
-      await deleteDoc(doc(db, 'exercises', id));
+      await deleteDoc(doc(db, `coaches/${user.uid}/exercises`, id));
     } catch (error) {
       console.error('Error removing exercise:', error);
       throw error;
@@ -244,8 +251,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Athlete functions
   const addAthlete = async (athlete: Omit<Athlete, 'id'>) => {
+    if (!user) throw new Error('Not authenticated');
     try {
-      const docRef = await addDoc(collection(db, 'athletes'), athlete);
+      const docRef = await addDoc(collection(db, `coaches/${user.uid}/athletes`), {
+        ...athlete,
+        coachId: user.uid
+      });
       console.log('Athlete added with ID:', docRef.id);
     } catch (error) {
       console.error('Error adding athlete:', error);
@@ -254,8 +265,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateAthlete = async (id: string, athlete: Omit<Athlete, 'id'>) => {
+    if (!user) throw new Error('Not authenticated');
     try {
-      await updateDoc(doc(db, 'athletes', id), athlete);
+      await updateDoc(doc(db, `coaches/${user.uid}/athletes`, id), {
+        ...athlete,
+        coachId: user.uid
+      });
     } catch (error) {
       console.error('Error updating athlete:', error);
       throw error;
@@ -263,8 +278,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeAthlete = async (id: string) => {
+    if (!user) throw new Error('Not authenticated');
     try {
-      await deleteDoc(doc(db, 'athletes', id));
+      await deleteDoc(doc(db, `coaches/${user.uid}/athletes`, id));
     } catch (error) {
       console.error('Error removing athlete:', error);
       throw error;
@@ -273,16 +289,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Sequence functions
   const addSequence = async (sequence: Omit<DrillSequence, 'id'>) => {
+    if (!user) throw new Error('Not authenticated');
     try {
       const preparedSequence = {
         ...sequence,
+        coachId: user.uid,
         drills: sequence.drills.map(drill => ({
           ...drill,
           id: String(drill.id),
           exerciseId: String(drill.exerciseId)
         }))
       };
-      await addDoc(collection(db, 'sequences'), preparedSequence);
+      await addDoc(collection(db, `coaches/${user.uid}/sequences`), preparedSequence);
     } catch (error) {
       console.error('Error adding sequence:', error);
       throw error;
@@ -290,25 +308,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeSequence = async (id: string) => {
+    if (!user) throw new Error('Not authenticated');
     try {
-      await deleteDoc(doc(db, 'sequences', id));
+      await deleteDoc(doc(db, `coaches/${user.uid}/sequences`, id));
     } catch (error) {
       console.error('Error removing sequence:', error);
       throw error;
     }
   };
+
   // Workout functions
   const addWorkout = async (workout: Omit<Workout, 'id'>) => {
+    if (!user) throw new Error('Not authenticated');
     try {
       const preparedWorkout = {
         ...workout,
+        coachId: user.uid,
         items: workout.items.map(item => ({
           ...item,
           id: String(item.id),
           itemId: String(item.itemId)
         }))
       };
-      await addDoc(collection(db, 'workouts'), preparedWorkout);
+      await addDoc(collection(db, `coaches/${user.uid}/workouts`), preparedWorkout);
     } catch (error) {
       console.error('Error adding workout:', error);
       throw error;
@@ -316,16 +338,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateWorkout = async (id: string, workout: Omit<Workout, 'id'>) => {
+    if (!user) throw new Error('Not authenticated');
     try {
       const preparedWorkout = {
         ...workout,
+        coachId: user.uid,
         items: workout.items.map(item => ({
           ...item,
           id: String(item.id),
           itemId: String(item.itemId)
         }))
       };
-      await updateDoc(doc(db, 'workouts', id), preparedWorkout);
+      await updateDoc(doc(db, `coaches/${user.uid}/workouts`, id), preparedWorkout);
     } catch (error) {
       console.error('Error updating workout:', error);
       throw error;
@@ -333,8 +357,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeWorkout = async (id: string) => {
+    if (!user) throw new Error('Not authenticated');
     try {
-      await deleteDoc(doc(db, 'workouts', id));
+      await deleteDoc(doc(db, `coaches/${user.uid}/workouts`, id));
       // Also remove any scheduled instances of this workout
       const scheduledToRemove = scheduledWorkouts.filter(sw => sw.workoutId === id);
       for (const sw of scheduledToRemove) {
@@ -346,34 +371,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Scheduled Workout functions
-  const scheduleWorkout = async (workout: Omit<ScheduledWorkout, 'id'>) => {
-    try {
-      const preparedScheduledWorkout = {
-        ...workout,
-        workoutId: String(workout.workoutId),
-        athleteId: String(workout.athleteId)
-      };
-      await addDoc(collection(db, 'scheduledWorkouts'), preparedScheduledWorkout);
-    } catch (error) {
-      console.error('Error scheduling workout:', error);
-      throw error;
-    }
-  };
-
-  const removeScheduledWorkout = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'scheduledWorkouts', id));
-    } catch (error) {
-      console.error('Error removing scheduled workout:', error);
-      throw error;
-    }
-  };
-
   // Video functions
   const addVideo = async (video: Omit<Video, 'id'>) => {
+    if (!user) throw new Error('Not authenticated');
     try {
-      const docRef = await addDoc(collection(db, 'videos'), video);
+      const docRef = await addDoc(collection(db, `coaches/${user.uid}/videos`), {
+        ...video,
+        coachId: user.uid
+      });
       return docRef.id;
     } catch (error) {
       console.error('Error adding video:', error);
@@ -382,8 +387,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateVideoStatus = async (id: string, status: Video['status']) => {
+    if (!user) throw new Error('Not authenticated');
     try {
-      await updateDoc(doc(db, 'videos', id), { status });
+      await updateDoc(doc(db, `coaches/${user.uid}/videos`, id), { status });
     } catch (error) {
       console.error('Error updating video status:', error);
       throw error;
@@ -391,8 +397,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeVideo = async (id: string) => {
+    if (!user) throw new Error('Not authenticated');
     try {
-      await deleteDoc(doc(db, 'videos', id));
+      await deleteDoc(doc(db, `coaches/${user.uid}/videos`, id));
       // Update exercises that reference this video
       const exercisesWithVideo = exercises.filter(e => e.videoIds.includes(id));
       for (const exercise of exercisesWithVideo) {
@@ -406,6 +413,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const linkVideoToExercise = async (videoId: string, exerciseId: string) => {
+    if (!user) throw new Error('Not authenticated');
     try {
       const exercise = exercises.find(e => e.id === exerciseId);
       if (exercise) {
@@ -419,6 +427,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const unlinkVideoFromExercise = async (videoId: string, exerciseId: string) => {
+    if (!user) throw new Error('Not authenticated');
     try {
       const exercise = exercises.find(e => e.id === exerciseId);
       if (exercise) {
@@ -431,8 +440,36 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Scheduled Workout functions
+  const scheduleWorkout = async (workout: Omit<ScheduledWorkout, 'id'>) => {
+    if (!user) throw new Error('Not authenticated');
+    try {
+      const preparedScheduledWorkout = {
+        ...workout,
+        coachId: user.uid,
+        workoutId: String(workout.workoutId),
+        athleteId: String(workout.athleteId)
+      };
+      await addDoc(collection(db, `coaches/${user.uid}/assignments`), preparedScheduledWorkout);
+    } catch (error) {
+      console.error('Error scheduling workout:', error);
+      throw error;
+    }
+  };
+
+  const removeScheduledWorkout = async (id: string) => {
+    if (!user) throw new Error('Not authenticated');
+    try {
+      await deleteDoc(doc(db, `coaches/${user.uid}/assignments`, id));
+    } catch (error) {
+      console.error('Error removing scheduled workout:', error);
+      throw error;
+    }
+  };
+
   // Progress tracking functions
   const updateProgress = async (newProgress: Partial<ExerciseProgress>) => {
+    if (!user) throw new Error('Not authenticated');
     try {
       const exercise = exercises.find(e => e.id === newProgress.exerciseId);
       const workout = workouts.find(w => w.id === newProgress.workoutId);
@@ -466,8 +503,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       };
 
       const progressId = `${completeProgress.exerciseId}_${completeProgress.scheduledWorkoutId}`;
-      await setDoc(doc(db, 'progress', progressId), completeProgress);
-      console.log('Progress updated:', completeProgress);
+      await setDoc(doc(db, `coaches/${user.uid}/progress`, progressId), completeProgress);
     } catch (error) {
       console.error('Error updating progress:', error);
       throw error;
@@ -510,37 +546,39 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <StoreContext.Provider value={{
-      athletes,
-      addAthlete,
-      updateAthlete,
-      removeAthlete,
-      exercises,
-      setExercises,
-      addExercise,
-      updateExercise,
-      removeExercise,
-      sequences,
-      addSequence,
-      removeSequence,
-      workouts,
-      addWorkout,
-      updateWorkout,
-      removeWorkout,
-      scheduledWorkouts,
-      scheduleWorkout,
-      removeScheduledWorkout,
-      videos,
-      addVideo,
-      updateVideoStatus,
-      removeVideo,
-      linkVideoToExercise,
-      unlinkVideoFromExercise,
-      progress,
-      updateProgress,
-      getProgress,
-      getAthleteStats,
-    }}>
+    <StoreContext.Provider 
+      value={{
+        athletes,
+        addAthlete,
+        updateAthlete,
+        removeAthlete,
+        exercises,
+        setExercises,
+        addExercise,
+        updateExercise,
+        removeExercise,
+        sequences,
+        addSequence,
+        removeSequence,
+        workouts,
+        addWorkout,
+        updateWorkout,
+        removeWorkout,
+        scheduledWorkouts,
+        scheduleWorkout,
+        removeScheduledWorkout,
+        videos,
+        addVideo,
+        updateVideoStatus,
+        removeVideo,
+        linkVideoToExercise,
+        unlinkVideoFromExercise,
+        progress,
+        updateProgress,
+        getProgress,
+        getAthleteStats,
+      }}
+    >
       {children}
     </StoreContext.Provider>
   );
