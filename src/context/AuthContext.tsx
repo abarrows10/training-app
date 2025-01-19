@@ -5,15 +5,13 @@ import {
   User,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
-  sendEmailVerification,
-  sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
   updateEmail,
   updatePassword
 } from 'firebase/auth';
 import { auth, db } from '@/firebase/config';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 type UserRole = 'super_admin' | 'coach' | 'athlete';
 
@@ -57,15 +55,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setProfile(userProfile);
             setIsAdmin(!!userProfile.isAdmin);
           }
-          const token = await user.getIdToken();
-          document.cookie = `authToken=${token}; path=/; SameSite=Strict; Secure`;
         } catch (error) {
           console.error('Error fetching user profile:', error);
         }
       } else {
         setProfile(null);
         setIsAdmin(false);
-        document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
       }
       setUser(user);
       setLoading(false);
@@ -77,9 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      
       const token = await result.user.getIdToken();
-      document.cookie = `authToken=${token}; path=/; SameSite=Strict; Secure`;
+      document.cookie = `authToken=${token}; path=/;`;
     } catch (error: any) {
       console.error('Sign in error:', error);
       throw error;
@@ -89,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, role: UserRole) => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      
       
       const userProfile: UserProfile = {
         email,
@@ -114,9 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const token = await result.user.getIdToken();
-      document.cookie = `authToken=${token}; path=/; SameSite=Strict; Secure`;
-      
-      throw new Error('Please check your email to verify your account before signing in.');
+      document.cookie = `authToken=${token}; path=/;`;
     } catch (error: any) {
       console.error('Sign up error:', error);
       throw error;
@@ -124,20 +115,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-    } catch (error: any) {
-      console.error('Password reset error:', error);
-      throw error;
-    }
+    // Implement later
   };
 
   const updateUserEmail = async (newEmail: string) => {
     if (!user) throw new Error('No user signed in');
     try {
       await updateEmail(user, newEmail);
-      await updateDoc(doc(db, 'users', user.uid), { email: newEmail });
-      await sendEmailVerification(user);
+      await setDoc(doc(db, 'users', user.uid), { email: newEmail }, { merge: true });
     } catch (error: any) {
       console.error('Email update error:', error);
       throw error;
@@ -157,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setActiveCoachId = async (coachId: string) => {
     if (!user || !isAdmin) throw new Error('Unauthorized');
     try {
-      await updateDoc(doc(db, 'users', user.uid), { activeCoachId: coachId });
+      await setDoc(doc(db, 'users', user.uid), { activeCoachId: coachId }, { merge: true });
       setProfile(prev => prev ? { ...prev, activeCoachId: coachId } : null);
     } catch (error: any) {
       console.error('Set active coach error:', error);
