@@ -3,7 +3,18 @@ import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
-// Debug logging
+if (typeof window !== 'undefined') {
+  console.log('Raw process.env:', {
+    NODE_ENV: process.env.NODE_ENV,
+    ALL_ENV: Object.keys(process.env)
+  .filter(key => key.includes('FIREBASE'))
+  .reduce((acc: { [key: string]: string }, key) => {
+    acc[key] = process.env[key] || '';
+    return acc;
+  }, {})
+  });
+}
+
 console.log('FIREBASE CONFIG USED:', {
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,7 +22,6 @@ console.log('FIREBASE CONFIG USED:', {
   environment: process.env.NODE_ENV
 });
 
-// Environment enforcement - only in development
 if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.includes('test')) {
   console.error('WARNING: Not using test database in development!');
   throw new Error('Must use test database in development');
