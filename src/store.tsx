@@ -303,12 +303,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }))
       };
       console.log('Prepared sequence:', preparedSequence);
-      await addDoc(collection(db, `coaches/${user.uid}/sequences`), preparedSequence);
-    } catch (error) {
-      console.error('Error adding sequence:', error);
+      console.log('Drills in sequence:', preparedSequence.drills);
+      
+      const docRef = await addDoc(collection(db, `coaches/${user.uid}/sequences`), preparedSequence);
+      console.log('Sequence saved with ID:', docRef.id);
+    } catch (error: any) {
+      console.error('Detailed save error:', {
+        error: error.message,
+        code: error.code,
+        path: `coaches/${user.uid}/sequences`
+      });
       throw error;
     }
-  };
+   };
 
   const removeSequence = async (id: string) => {
     if (!user) throw new Error('Not authenticated');
