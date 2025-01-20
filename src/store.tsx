@@ -118,15 +118,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const unsubSequences = onSnapshot(
       collection(db, `coaches/${user.uid}/sequences`),
       (snapshot) => {
-        const sequenceData = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id,
-          drills: doc.data().drills.map((drill: any) => ({
-            ...drill,
-            id: String(drill.id),
-            exerciseId: String(drill.exerciseId)
-          }))
-        })) as DrillSequence[];
+        console.log('Sequences snapshot received, docs:', snapshot.docs.length);
+        const sequenceData = snapshot.docs.map(doc => {
+          console.log('Processing sequence doc:', doc.id, doc.data());
+          return {
+            ...doc.data(),
+            id: doc.id,
+            drills: doc.data().drills.map((drill: any) => ({
+              ...drill,
+              id: String(drill.id),
+              exerciseId: String(drill.exerciseId)
+            }))
+          };
+        }) as DrillSequence[];
+        console.log('Processed sequences:', sequenceData);
         setSequences(sequenceData);
       }
     );
