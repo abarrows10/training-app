@@ -291,6 +291,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addSequence = async (sequence: Omit<DrillSequence, 'id'>) => {
     if (!user) throw new Error('Not authenticated');
     try {
+      console.log('Current user:', user.uid);
+      console.log('Adding sequence to path:', `coaches/${user.uid}/sequences`);
       const preparedSequence = {
         ...sequence,
         coachId: user.uid,
@@ -300,6 +302,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           exerciseId: String(drill.exerciseId)
         }))
       };
+      console.log('Prepared sequence:', preparedSequence);
       await addDoc(collection(db, `coaches/${user.uid}/sequences`), preparedSequence);
     } catch (error) {
       console.error('Error adding sequence:', error);
