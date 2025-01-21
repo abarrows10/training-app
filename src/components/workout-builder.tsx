@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Plus, Save, Trash, ArrowUp, ArrowDown, Edit, X, Check } from 'lucide-react';
 import { useStore } from '@/store';
+import { useAuth } from '@/context/AuthContext';
 import { Workout, WorkoutForm, WorkoutItem } from '@/types/interfaces';
 
 const WorkoutBuilder = () => {
@@ -18,6 +19,8 @@ const WorkoutBuilder = () => {
     items: [],
     coachId: ''
   });
+
+  const { user } = useAuth();
 
   const addItem = (type: 'sequence' | 'drill', isEditing: boolean = false) => {
     const newItem: WorkoutItem = {
@@ -66,6 +69,11 @@ const WorkoutBuilder = () => {
   };
 
   const handleSave = async () => {
+    if (!user?.uid) {
+      alert('Please log in to save workouts');
+      return;
+    }
+  
     if (!workout.name.trim()) {
       alert('Please add a workout name');
       return;
@@ -89,9 +97,9 @@ const WorkoutBuilder = () => {
           sets: item.sets || 0,
           reps: item.reps || 0
         })),
-        coachId: ''
+        coachId: user.uid
       });
-      setWorkout({ name: '', items: [], coachId: '' });
+      setWorkout({ name: '', items: [], coachId: user.uid });
     } catch (error) {
       console.error('Error saving workout:', error);
       alert('Error saving workout. Please try again.');
