@@ -65,7 +65,7 @@ const WorkoutBuilder = () => {
     setFunction(prev => ({ ...prev, items: newItems }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!workout.name.trim()) {
       alert('Please add a workout name');
       return;
@@ -74,12 +74,28 @@ const WorkoutBuilder = () => {
       alert('Please add at least one item');
       return;
     }
-    if (workout.items.some(item => item.itemId === '')) {
+    if (workout.items.some(item => !item.itemId)) {
       alert('Please select an item for each entry');
       return;
     }
-    addWorkout(workout);
-    setWorkout({ name: '', items: [], coachId: '' });
+  
+    try {
+      await addWorkout({
+        name: workout.name,
+        items: workout.items.map(item => ({
+          id: item.id,
+          type: item.type,
+          itemId: item.itemId,
+          sets: item.sets || 0,
+          reps: item.reps || 0
+        })),
+        coachId: ''
+      });
+      setWorkout({ name: '', items: [], coachId: '' });
+    } catch (error) {
+      console.error('Error saving workout:', error);
+      alert('Error saving workout. Please try again.');
+    }
   };
 
   const startEdit = (workout: Workout) => {
