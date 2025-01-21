@@ -28,66 +28,70 @@ const WorkoutBuilder = () => {
       reps: undefined
     };
 
-    const setFunction = isEditing ? setEditWorkout : setWorkout;const updateItem = (index: number, updates: Partial<WorkoutItem>, isEditing: boolean = false) => {
-      const currentWorkout = isEditing ? editWorkout : workout;
-      const setFunction = isEditing ? setEditWorkout : setWorkout;
-      const newItems = [...currentWorkout.items];
-      newItems[index] = { ...newItems[index], ...updates };
-      setFunction(prev => ({ ...prev, items: newItems }));
-    };
-  
-    const removeItem = (index: number, isEditing: boolean = false) => {
-      const setFunction = isEditing ? setEditWorkout : setWorkout;
-      setFunction(prev => ({
-        ...prev,
-        items: prev.items.filter((_, i) => i !== index)
-      }));
-    };
-  
-    const moveItem = (index: number, direction: 'up' | 'down', isEditing: boolean = false) => {
-      const currentWorkout = isEditing ? editWorkout : workout;
-      const setFunction = isEditing ? setEditWorkout : setWorkout;
-      const newItems = [...currentWorkout.items];
-      
-      if (direction === 'up' && index > 0) {
-        [newItems[index], newItems[index - 1]] = [newItems[index - 1], newItems[index]];
-      } else if (direction === 'down' && index < newItems.length - 1) {
-        [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
-      }
-      
-      setFunction(prev => ({ ...prev, items: newItems }));
-    };
-  
-    const handleSave = () => {
-      if (!workout.name.trim()) {
-        alert('Please add a workout name');
-        return;
-      }
-      if (workout.items.length === 0) {
-        alert('Please add at least one item');
-        return;
-      }
-      if (workout.items.some(item => item.itemId === '')) {
-        alert('Please select items for all entries');
-        return;
-      }
-      addWorkout(workout);
-      setWorkout({ name: '', items: [], coachId: '' });
-      alert('Workout saved successfully!');
-    };
-  
-    const startEdit = (workout: Workout) => {
-      setEditingId(workout.id);
-      setEditWorkout({
-        name: workout.name,
-        items: [...workout.items],
-        coachId: workout.coachId
-      });
-    };
+    const setFunction = isEditing ? setEditWorkout : setWorkout;
     setFunction(prev => ({
       ...prev,
       items: [...prev.items, newItem]
     }));
+  };
+
+  const updateItem = (index: number, updates: Partial<WorkoutItem>, isEditing: boolean = false) => {
+    const currentWorkout = isEditing ? editWorkout : workout;
+    const setFunction = isEditing ? setEditWorkout : setWorkout;
+    const newItems = [...currentWorkout.items];
+    newItems[index] = { ...newItems[index], ...updates };
+    setFunction(prev => ({ ...prev, items: newItems }));
+  };
+
+  const removeItem = (index: number, isEditing: boolean = false) => {
+    const setFunction = isEditing ? setEditWorkout : setWorkout;
+    setFunction(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index)
+    }));
+  };
+
+  const moveItem = (index: number, direction: 'up' | 'down', isEditing: boolean = false) => {
+    const currentWorkout = isEditing ? editWorkout : workout;
+    const setFunction = isEditing ? setEditWorkout : setWorkout;
+    const newItems = [...currentWorkout.items];
+    
+    if (direction === 'up' && index > 0) {
+      [newItems[index], newItems[index - 1]] = [newItems[index - 1], newItems[index]];
+    } else if (direction === 'down' && index < newItems.length - 1) {
+      [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+    }
+    
+    setFunction(prev => ({ ...prev, items: newItems }));
+  };
+
+  const handleSave = () => {
+    if (!workout.name.trim()) {
+      alert('Please add a workout name');
+      return;
+    }
+    if (workout.items.length === 0) {
+      alert('Please add at least one item');
+      return;
+    }
+    if (workout.items.some(item => item.itemId === '')) {
+      alert('Please select an item for each entry');
+      return;
+    }
+    addWorkout(workout);
+    setWorkout({ name: '', items: [], coachId: '' });
+  };
+
+  const startEdit = (workout: Workout) => {
+    setEditingId(workout.id);
+    setEditWorkout({
+      name: workout.name,
+      items: workout.items.map(item => ({
+        ...item,
+        id: item.id || Date.now().toString()
+      })),
+      coachId: workout.coachId
+    });
   };
 
   const cancelEdit = () => {
@@ -105,7 +109,7 @@ const WorkoutBuilder = () => {
       return;
     }
     if (editWorkout.items.some(item => item.itemId === '')) {
-      alert('Please select items for all entries');
+      alert('Please select an item for each entry');
       return;
     }
     
@@ -124,237 +128,162 @@ const WorkoutBuilder = () => {
     }
   };
 
-  // Add these functions after the state declarations
-const updateItem = (index: number, updates: Partial<WorkoutItem>, isEditing: boolean = false) => {
-  const currentWorkout = isEditing ? editWorkout : workout;
-  const setFunction = isEditing ? setEditWorkout : setWorkout;
-  const newItems = [...currentWorkout.items];
-  newItems[index] = { ...newItems[index], ...updates };
-  setFunction(prev => ({ ...prev, items: newItems }));
-};
+  const renderItemList = (item: WorkoutItem, options: any[]) => {
+    return (
+      <select
+        value={item.itemId}
+        onChange={(e) => {
+          const selectedOption = options.find(opt => opt.id === e.target.value);
+          return updateItem(
+            currentWorkout.items.findIndex(i => i.id === item.id),
+            { itemId: e.target.value },
+            Boolean(editingId)
+          );
+        }}
+        className="p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+      >
+        <option value="">Select {item.type === 'sequence' ? 'a sequence' : 'a drill'}...</option>
+        {options.map(option => (
+          <option key={option.id} value={option.id}>
+            {option.name}
+          </option>
+        ))}
+      </select>
+    );
+  };
 
-const removeItem = (index: number, isEditing: boolean = false) => {
-  const setFunction = isEditing ? setEditWorkout : setWorkout;
-  setFunction(prev => ({
-    ...prev,
-    items: prev.items.filter((_, i) => i !== index)
-  }));
-};
-
-const moveItem = (index: number, direction: 'up' | 'down', isEditing: boolean = false) => {
-  const currentWorkout = isEditing ? editWorkout : workout;
-  const setFunction = isEditing ? setEditWorkout : setWorkout;
-  const newItems = [...currentWorkout.items];
-  
-  if (direction === 'up' && index > 0) {
-    [newItems[index], newItems[index - 1]] = [newItems[index - 1], newItems[index]];
-  } else if (direction === 'down' && index < newItems.length - 1) {
-    [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
-  }
-  
-  setFunction(prev => ({ ...prev, items: newItems }));
-};
-
-const handleSave = () => {
-  if (!workout.name.trim()) {
-    alert('Please add a workout name');
-    return;
-  }
-  if (workout.items.length === 0) {
-    alert('Please add at least one item');
-    return;
-  }
-  if (workout.items.some(item => item.itemId === '')) {
-    alert('Please select items for all entries');
-    return;
-  }
-  addWorkout(workout);
-  setWorkout({ name: '', items: [], coachId: '' });
-};
-
-const startEdit = (workout: Workout) => {
-  setEditingId(workout.id);
-  setEditWorkout({
-    name: workout.name,
-    items: [...workout.items],
-    coachId: workout.coachId
-  });
-};
+  const currentWorkout = editingId ? editWorkout : workout;
 
   return (
     <div className="mx-auto max-w-full">
       <div className="bg-[#242526] rounded-xl shadow-lg p-3 md:p-6">
-        {editingId ? (
-          // Edit Mode
-          <>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-              <div className="w-full md:w-auto">
-                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Edit Workout</h2>
-                <input
-                  type="text"
-                  value={editWorkout.name}
-                  onChange={(e) => setEditWorkout(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full p-2 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => addItem('sequence', true)}
-                  className="bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
-                >
-                  Add Sequence
-                </button>
-                <button 
-                  onClick={() => addItem('drill', true)}
-                  className="bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
-                >
-                  Add Drill
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          // Create Mode
-          <>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-              <div className="w-full md:w-auto">
-                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Workout Builder</h2>
-                <input
-                  type="text"
-                  placeholder="Workout Name"
-                  value={workout.name}
-                  onChange={(e) => setWorkout(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full p-2 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => addItem('sequence')}
-                  className="bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
-                >
-                  Add Sequence
-                </button>
-                <button 
-                  onClick={() => addItem('drill')}
-                  className="bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
-                >
-                  Add Drill
-                </button>
-              </div>
-            </div>
-            
-            {/* Workout Items */}
-            <div className="space-y-4">
-              {(editingId ? editWorkout : workout).items.map((item, index) => (
-                <div 
-                  key={item.id}
-                  className="p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]"
-                >
-                  <div className="flex flex-col md:flex-row gap-4 items-center">
-                    <div className="flex md:flex-col gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => moveItem(index, 'up', Boolean(editingId))}
-                        disabled={index === 0}
-                        className={`text-gray-400 hover:text-white transition-colors ${index === 0 ? 'opacity-50' : ''}`}
-                      >
-                        <ArrowUp className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => moveItem(index, 'down', Boolean(editingId))}
-                        disabled={index === (editingId ? editWorkout : workout).items.length - 1}
-                        className={`text-gray-400 hover:text-white transition-colors ${
-                          index === (editingId ? editWorkout : workout).items.length - 1 ? 'opacity-50' : ''
-                        }`}
-                      >
-                        <ArrowDown className="w-4 h-4" />
-                      </button>
-                    </div>
-  
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <select
-                        value={item.type}
-                        onChange={(e) => updateItem(index, { type: e.target.value as 'sequence' | 'drill' }, Boolean(editingId))}
-                        className="p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-                      >
-                        <option value="sequence">Sequence</option>
-                        <option value="drill">Single Drill</option>
-                      </select>
-  
-                      <select
-                        value={item.itemId}
-                        onChange={(e) => updateItem(index, { itemId: e.target.value }, Boolean(editingId))}
-                        className="p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-                      >
-                        <option value="">Select {item.type === 'sequence' ? 'a sequence' : 'a drill'}...</option>
-                        {item.type === 'sequence' 
-                          ? sequences.map(sequence => (
-                              <option key={sequence.id} value={sequence.id}>{sequence.name}</option>
-                            ))
-                          : exercises.map(exercise => (
-                              <option key={exercise.id} value={exercise.id}>{exercise.name}</option>
-                            ))
-                        }
-                      </select>
-  
-                      <div className="flex gap-2">
-                        <input
-                          type="number"
-                          placeholder="Sets"
-                          value={item.sets || ''}
-                          onChange={(e) => updateItem(index, { sets: parseInt(e.target.value) || undefined }, Boolean(editingId))}
-                          className="w-20 p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-                        />
-                        <input
-                          type="number"
-                          placeholder="Reps"
-                          value={item.reps || ''}
-                          onChange={(e) => updateItem(index, { reps: parseInt(e.target.value) || undefined }, Boolean(editingId))}
-                          className="w-20 p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-                        />
-                      </div>
-                    </div>
-                    
-                    <button
-                      onClick={() => removeItem(index, Boolean(editingId))}
-                      className="text-red-500 hover:text-red-600 transition-colors flex-shrink-0"
-                    >
-                      <Trash className="w-4 h-4" />
-                    </button>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div className="w-full md:w-auto">
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
+              {editingId ? 'Edit Workout' : 'Workout Builder'}
+            </h2>
+            <input
+              type="text"
+              placeholder="Workout Name"
+              value={currentWorkout.name}
+              onChange={(e) => {
+                const setFunction = editingId ? setEditWorkout : setWorkout;
+                setFunction(prev => ({ ...prev, name: e.target.value }));
+              }}
+              className="w-full p-2 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => addItem('sequence', Boolean(editingId))}
+              className="bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
+            >
+              <Plus className="w-4 h-4 md:mr-2 inline-block" />
+              <span className="hidden md:inline">Add Sequence</span>
+            </button>
+            <button 
+              onClick={() => addItem('drill', Boolean(editingId))}
+              className="bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
+            >
+              <Plus className="w-4 h-4 md:mr-2 inline-block" />
+              <span className="hidden md:inline">Add Drill</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {currentWorkout.items.map((item, index) => (
+            <div 
+              key={item.id}
+              className="p-4 border border-[#3A3B3C] rounded-lg bg-[#18191A]"
+            >
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <div className="flex md:flex-col gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => moveItem(index, 'up', Boolean(editingId))}
+                    disabled={index === 0}
+                    className={`text-gray-400 hover:text-white transition-colors ${index === 0 ? 'opacity-50' : ''}`}
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => moveItem(index, 'down', Boolean(editingId))}
+                    disabled={index === currentWorkout.items.length - 1}
+                    className={`text-gray-400 hover:text-white transition-colors ${
+                      index === currentWorkout.items.length - 1 ? 'opacity-50' : ''
+                    }`}
+                  >
+                    <ArrowDown className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {item.type === 'sequence' ? 
+                    renderItemList(item, sequences) : 
+                    renderItemList(item, exercises)
+                  }
+
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="Sets"
+                      value={item.sets || ''}
+                      onChange={(e) => updateItem(index, { sets: parseInt(e.target.value) || undefined }, Boolean(editingId))}
+                      className="w-20 p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Reps"
+                      value={item.reps || ''}
+                      onChange={(e) => updateItem(index, { reps: parseInt(e.target.value) || undefined }, Boolean(editingId))}
+                      className="w-20 p-2 bg-[#242526] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-  
-            {/* Action Buttons */}
-            <div className="mt-6 flex justify-end gap-3">
-              {editingId ? (
-                <>
-                  <button
-                    onClick={cancelEdit}
-                    className="px-4 py-2 border border-[#3A3B3C] rounded-lg hover:bg-[#3A3B3C] text-white transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleEditSave(editingId)}
-                    className="bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
-                  >
-                    Save Changes
-                  </button>
-                </>
-              ) : (
+                
                 <button
-                  onClick={handleSave}
-                  className="bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
+                  onClick={() => removeItem(index, Boolean(editingId))}
+                  className="text-red-500 hover:text-red-600 transition-colors flex-shrink-0"
                 >
-                  Save Workout
+                  <Trash className="w-4 h-4" />
                 </button>
-              )}
+              </div>
             </div>
-          </>
-        )}
-  
-        {/* Saved Workouts List */}
+          ))}
+
+          {currentWorkout.items.length === 0 && (
+            <div className="text-center py-8 text-gray-400">
+              Click "Add Sequence" or "Add Drill" to start building your workout
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          {editingId ? (
+            <>
+              <button
+                onClick={cancelEdit}
+                className="px-4 py-2 border border-[#3A3B3C] rounded-lg hover:bg-[#3A3B3C] text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleEditSave(editingId)}
+                className="bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
+              >
+                Save Changes
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleSave}
+              className="bg-[#00A3E0] text-white px-4 py-2 rounded-lg hover:bg-[#0077A3] transition-colors"
+            >
+              Save Workout
+            </button>
+          )}
+        </div>
+
         {workouts.length > 0 && !editingId && (
           <div className="mt-8 border-t border-[#3A3B3C] pt-6">
             <h3 className="text-lg font-bold text-white mb-4">Saved Workouts</h3>
