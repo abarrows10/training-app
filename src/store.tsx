@@ -116,25 +116,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     // Sequences listener
     const unsubSequences = onSnapshot(
-      collection(db, `coaches/${user.uid}/sequences`),
-      (snapshot) => {
-        console.log('Sequences snapshot received, docs:', snapshot.docs.length);
-        const sequenceData = snapshot.docs.map(doc => {
-          console.log('Processing sequence doc:', doc.id, doc.data());
-          return {
-            ...doc.data(),
-            id: doc.id,
-            drills: doc.data().drills.map((drill: any) => ({
-              ...drill,
-              id: String(drill.id),
-              exerciseId: String(drill.exerciseId)
-            }))
-          };
-        }) as DrillSequence[];
-        console.log('Processed sequences:', sequenceData);
-        setSequences(sequenceData);
-      }
-    );
+  collection(db, `coaches/${user.uid}/sequences`),
+  (snapshot) => {
+    console.log('Sequences snapshot received, docs:', snapshot.docs.length);
+    const sequenceData = snapshot.docs.map(doc => {
+      console.log('Processing sequence doc:', doc.id, doc.data());
+      return {
+        ...doc.data(),
+        id: doc.id,
+        drills: doc.data().drills.map((drill: any) => ({
+          ...drill,
+          id: String(drill.id),
+          exerciseId: String(drill.exerciseId)
+        }))
+      };
+    }) as DrillSequence[];
+    console.log('Processed sequences:', sequenceData);
+    setSequences(sequenceData);
+  }
+);
 
     // Workouts listener
     const unsubWorkouts = onSnapshot(
@@ -293,34 +293,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Sequence functions
-  const addSequence = async (sequence: Omit<DrillSequence, 'id'>) => {
+  
+  const addSequence = async (sequence: SequenceForm) => {
     if (!user) throw new Error('Not authenticated');
-    try {
-      console.log('Current user:', user.uid);
-      console.log('Adding sequence to path:', `coaches/${user.uid}/sequences`);
-      const preparedSequence = {
-        ...sequence,
-        coachId: user.uid,
-        drills: sequence.drills.map(drill => ({
-          ...drill,
-          id: String(drill.id),
-          exerciseId: String(drill.exerciseId)
-        }))
-      };
-      console.log('Prepared sequence:', preparedSequence);
-      console.log('Drills in sequence:', preparedSequence.drills);
-      
-      const docRef = await addDoc(collection(db, `coaches/${user.uid}/sequences`), preparedSequence);
-      console.log('Sequence saved with ID:', docRef.id);
-    } catch (error: any) {
-      console.error('Detailed save error:', {
-        error: error.message,
-        code: error.code,
-        path: `coaches/${user.uid}/sequences`
-      });
-      throw error;
-    }
-   };
+    await addDoc(collection(db, `coaches/${user.uid}/sequences`), sequence);
+  };
+
 
   const removeSequence = async (id: string) => {
     if (!user) throw new Error('Not authenticated');
@@ -333,23 +311,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Workout functions
-  const addWorkout = async (workout: Omit<Workout, 'id'>) => {
+  const addWorkout = async (workout: WorkoutForm) => {
     if (!user) throw new Error('Not authenticated');
-    try {
-      const preparedWorkout = {
-        ...workout,
-        coachId: user.uid,
-        items: workout.items.map(item => ({
-          ...item,
-          id: String(item.id),
-          itemId: String(item.itemId)
-        }))
-      };
-      await addDoc(collection(db, `coaches/${user.uid}/workouts`), preparedWorkout);
-    } catch (error) {
-      console.error('Error adding workout:', error);
-      throw error;
-    }
+    await addDoc(collection(db, `coaches/${user.uid}/workouts`), workout);
   };
 
   const updateWorkout = async (id: string, workout: Omit<Workout, 'id'>) => {
@@ -503,6 +467,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
 
       const completeProgress: ExerciseProgress = {
+        id: `${newProgress.exerciseId}_${newProgress.scheduledWorkoutId}`,
         exerciseId: newProgress.exerciseId!,
         athleteId: newProgress.athleteId!,
         workoutId: newProgress.workoutId!,
@@ -514,16 +479,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setsCompleted: newProgress.setsCompleted || 0,
         repsCompleted: newProgress.repsCompleted || 0,
         targetSets: workoutItem?.sets,
-        targetReps: workoutItem?.reps
+        targetReps: workoutItem?.reps,
+        coachId: user.uid
       };
-
-      const progressId = `${completeProgress.exerciseId}_${completeProgress.scheduledWorkoutId}`;
-      await setDoc(doc(db, `coaches/${user.uid}/progress`, progressId), completeProgress);
+   
+      await setDoc(doc(db, `coaches/${user.uid}/progress`, completeProgress.id), completeProgress);
     } catch (error) {
       console.error('Error updating progress:', error);
       throw error;
     }
-  };
+   };
 
   const getProgress = (exerciseId: string, scheduledWorkoutId: string): ExerciseProgress | undefined => {
     return progress.find(p => 
