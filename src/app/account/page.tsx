@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Menu, Dumbbell, PlaySquare, Calendar, Users, Video, ChartNoAxesCombined, User, Home, LogOut } from 'lucide-react';
+import { Menu, Dumbbell, PlaySquare, Calendar, Users, Video, Tag, ChartNoAxesCombined, User, Home, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -74,15 +74,23 @@ export default function AccountManagement() {
     if (profile?.role === 'coach') {
       return [
         { href: '/account', label: 'Account', icon: User },
-        { href: '/coach/exercises', label: 'Exercise Library', icon: Dumbbell },
-        { href: '/coach/sequences', label: 'Sequences', icon: PlaySquare },
-        { href: '/coach/workouts', label: 'Workouts', icon: Calendar },
-        { href: '/coach/assignments', label: 'Assignments', icon: Calendar },
-        { href: '/coach/athletes', label: 'Athletes', icon: Users },
-        { href: '/coach/videos', label: 'Videos', icon: PlaySquare },
-        { href: '/coach/video-analysis', label: 'Video Analysis', icon: Video },
-        { href: '/coach/analytics', label: 'Analytics', icon: ChartNoAxesCombined },
-      ];
+  { 
+    href: '#', // No direct link, just a menu trigger
+    label: 'Exercises', 
+    icon: Dumbbell,
+    subItems: [
+      { href: '/coach/exercises', label: 'Exercise Library', icon: Dumbbell },
+      { href: '/coach/categories', label: 'Categories', icon: Tag }
+    ]
+  },
+  { href: '/coach/sequences', label: 'Sequences', icon: PlaySquare },
+  { href: '/coach/workouts', label: 'Workouts', icon: Calendar },
+  { href: '/coach/assignments', label: 'Assignments', icon: Calendar },
+  { href: '/coach/athletes', label: 'Athletes', icon: Users },
+  { href: '/coach/videos', label: 'Videos', icon: PlaySquare },
+  { href: '/coach/video-analysis', label: 'Video Analysis', icon: Video },
+  { href: '/coach/analytics', label: 'Analytics', icon: ChartNoAxesCombined },
+];
     } else {
       return [
         { href: '/account', label: 'Account', icon: User },

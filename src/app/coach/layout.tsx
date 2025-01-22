@@ -32,10 +32,11 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/account', label: 'Account', icon: User },
   { 
-    href: '/coach/exercises', 
-    label: 'Exercise Library', 
+    href: '#', // No direct link, just a menu trigger
+    label: 'Exercises', 
     icon: Dumbbell,
     subItems: [
+      { href: '/coach/exercises', label: 'Exercise Library', icon: Dumbbell },
       { href: '/coach/categories', label: 'Categories', icon: Tag }
     ]
   },
