@@ -91,3 +91,31 @@ export interface ExerciseProgress {
   targetReps?: number;
   coachId: string;
 }
+
+export interface Invitation {
+  id: string;
+  coachId: string;
+  email: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface CoachProfile {
+  id: string;
+  athletes: string[];  // athlete UIDs
+  invites: string[];   // invitation IDs
+}
+
+export interface AthleteProfile {
+  id: string;
+  coachId: string;
+  joinedAt: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  coachId: string;
+  isDefault?: boolean;
+}

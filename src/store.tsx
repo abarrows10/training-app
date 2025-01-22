@@ -21,7 +21,10 @@ import {
   Workout, 
   ExerciseProgress,
   Video,
+  SequenceForm,
+  WorkoutForm,
   Athlete,
+  Category,
   ScheduledWorkout,
   WorkoutItem
 } from '@/types/interfaces';
@@ -69,7 +72,13 @@ interface StoreContextType {
     exercisesByCategory: Record<string, number>;
     completionDates: string[];
   };
+
+  categories: Category[];
+  addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
+  updateCategory: (id: string, category: Omit<Category, 'id'>) => Promise<void>;
+  removeCategory: (id: string) => Promise<void>;
 }
+
 const StoreContext = createContext<StoreContextType | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
@@ -81,6 +90,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [scheduledWorkouts, setScheduledWorkouts] = useState<ScheduledWorkout[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [progress, setProgress] = useState<ExerciseProgress[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     if (!user || !profile || profile.role !== 'coach') return;
@@ -101,6 +111,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       (error) => console.error('Exercises listener error:', error)
     );
+
+    // Categories listener
+const unsubCategories = onSnapshot(
+  collection(db, `coaches/${user.uid}/categories`),
+  (snapshot) => {
+    const categoryData = snapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id
+    })) as Category[];
+    setCategories(categoryData);
+  }
+);
 
     // Athletes listener
     const unsubAthletes = onSnapshot(
@@ -211,6 +233,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       unsubScheduled();
       unsubVideos();
       unsubProgress();
+      unsubCategories();
     };
   }, [user, profile]);
 
@@ -253,6 +276,53 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
   };
+
+  // Add category functions alongside other CRUD functions
+const addCategory = async (category: Omit<Category, 'id'>) => {
+  if (!user) throw new Error('Not authenticated');
+  try {
+    await addDoc(collection(db, `coaches/${user.uid}/categories`), {
+      ...category,
+      coachId: user.uid
+    });
+  } catch (error) {
+    console.error('Error adding category:', error);
+    throw error;
+  }
+};
+
+const updateCategory = async (id: string, category: Omit<Category, 'id'>) => {
+  if (!user) throw new Error('Not authenticated');
+  try {
+    await updateDoc(doc(db, `coaches/${user.uid}/categories`, id), {
+      ...category,
+      coachId: user.uid
+    });
+  } catch (error) {
+    console.error('Error updating category:', error);
+    throw error;
+  }
+};
+
+const removeCategory = async (id: string) => {
+  if (!user) throw new Error('Not authenticated');
+  try {
+    // Check if category is in use
+    const exercisesWithCategory = exercises.filter(e => {
+      const category = categories.find(c => c.id === id);
+      return category && e.category === category.name;
+    });
+    
+    if (exercisesWithCategory.length > 0) {
+      throw new Error('Cannot delete category that is in use by exercises');
+    }
+    
+    await deleteDoc(doc(db, `coaches/${user.uid}/categories`, id));
+  } catch (error) {
+    console.error('Error removing category:', error);
+    throw error;
+  }
+};
 
   // Athlete functions
   const addAthlete = async (athlete: Omit<Athlete, 'id'>) => {
@@ -497,7 +567,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const getAthleteStats = (athleteId: string, dateRange?: { start: string; end: string }) => {
+  const getAthleteStats = (athleteId: string, dateRange?: { start: string; end: string; }) => {
     const athleteProgress = progress.filter(p => {
       const progressDate = new Date(p.date);
       if (dateRange) {
@@ -510,7 +580,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return p.athleteId === athleteId;
     });
 
-    return {
+    const stats = {
       totalWorkouts: new Set(athleteProgress.map(p => p.workoutId)).size,
       totalExercises: athleteProgress.filter(p => p.completed).length,
       totalSets: athleteProgress.reduce((sum, p) => sum + (p.setsCompleted || 0), 0),
@@ -523,7 +593,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         .filter(p => p.completed)
         .map(p => p.date))]
     };
-  };
+
+    return stats;
+};
 
   return (
     <StoreContext.Provider 
@@ -557,6 +629,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         updateProgress,
         getProgress,
         getAthleteStats,
+        categories,
+        addCategory,
+        updateCategory,
+        removeCategory,
       }}
     >
       {children}
