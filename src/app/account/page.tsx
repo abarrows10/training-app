@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Menu } from 'lucide-react';
+import { Dumbbell, User, Users, Calendar, PlaySquare, Home, Menu, X, ChartNoAxesCombined, Video, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AccountManagement() {
@@ -60,16 +60,17 @@ export default function AccountManagement() {
   };
 
   const navItems = profile?.role === 'coach' ? [
-    { href: '/coach/exercises', label: 'Exercise Library' },
-    { href: '/coach/sequences', label: 'Sequences' },
-    { href: '/coach/workouts', label: 'Workouts' },
-    { href: '/coach/assignments', label: 'Assignments' },
-    { href: '/coach/athletes', label: 'Athletes' },
-    { href: '/coach/videos', label: 'Videos' },
-    { href: '/coach/video-analysis', label: 'Video Analysis' },
-    { href: '/coach/analytics', label: 'Analytics' }
+    { href: '/account', label: 'Account', icon: User }, 
+  { href: '/coach/exercises', label: 'Exercise Library', icon: Dumbbell },
+   { href: '/coach/sequences', label: 'Sequences', icon: PlaySquare },
+   { href: '/coach/workouts', label: 'Workouts', icon: Calendar },
+   { href: '/coach/assignments', label: 'Assignments', icon: Calendar },
+   { href: '/coach/athletes', label: 'Athletes', icon: Users },
+   { href: '/coach/videos', label: 'Videos', icon: PlaySquare },
+   { href: '/coach/video-analysis', label: 'Video Analysis', icon: Video },
+   { href: '/coach/analytics', label: 'Analytics', icon: ChartNoAxesCombined },
   ] : [
-    { href: '/athlete/workouts', label: 'My Workouts' }
+    { href: '/athlete/workouts', label: 'My Workouts', icon: Dumbbell }
   ];
 
   return (
