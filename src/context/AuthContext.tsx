@@ -9,7 +9,6 @@ import {
   onAuthStateChanged,
   updateEmail,
   updatePassword,
-  sendEmailVerification,
   sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth, db } from '@/firebase/config';
@@ -37,7 +36,6 @@ interface AuthContextType {
   logout: () => Promise<void>;
   isAdmin: boolean;
   setActiveCoachId: (coachId: string) => Promise<void>;
-  resendVerificationEmail: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -86,7 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, role: UserRole) => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      await sendEmailVerification(result.user);
       
       const userProfile: UserProfile = {
         email,
@@ -130,26 +127,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const resendVerificationEmail = async () => {
-    if (!user) throw new Error('No user signed in');
-    try {
-      await sendEmailVerification(user, {
-        url: `${window.location.origin}/login`
-      });
-    } catch (error: any) {
-      console.error('Email verification error:', error);
-      throw error;
-    }
-  };
-
   const updateUserEmail = async (newEmail: string) => {
     if (!user) throw new Error('No user signed in');
     try {
       await updateEmail(user, newEmail);
       await setDoc(doc(db, 'users', user.uid), { email: newEmail }, { merge: true });
-      await sendEmailVerification(user, {
-        url: `${window.location.origin}/login`
-      });
+      
     } catch (error: any) {
       console.error('Email update error:', error);
       throw error;
@@ -201,7 +184,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         isAdmin,
         setActiveCoachId,
-        resendVerificationEmail
       }}
     >
       {!loading && children}

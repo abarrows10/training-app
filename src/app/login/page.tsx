@@ -17,15 +17,10 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const router = useRouter();
-  const { signIn, signUp, resetPassword, resendVerificationEmail, user, profile } = useAuth();
+  const { signIn, signUp, resetPassword, user, profile } = useAuth();
 
   useEffect(() => {
     if (user && profile) {
-      if (!user.emailVerified) {
-        setError('Please verify your email address before continuing.');
-        return;
-      }
-      
       // Route based on user role
       const routeUser = () => {
         if (profile.isAdmin) {
@@ -56,16 +51,10 @@ export default function LoginPage() {
           return;
         }
         await signUp(email, password, role);
-        setMessage('Account created! Please check your email to verify your account.');
+        setMessage('Account created! You can now sign in.');
         setMode('signin');
       } else if (mode === 'signin') {
         await signIn(email, password);
-        if (user && !user.emailVerified) {
-          setError('Please verify your email address.');
-          await resendVerificationEmail();
-          return;
-        }
-        // Router will handle redirect based on profile in useEffect
       } else if (mode === 'reset') {
         await resetPassword(email);
         setMessage('Password reset instructions sent to your email.');
@@ -86,15 +75,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleResendVerification = async () => {
-    try {
-      await resendVerificationEmail();
-      setMessage('Verification email resent. Please check your inbox.');
-    } catch (error: any) {
-      setError('Error sending verification email. Please try again.');
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#18191A]">
       <div className="bg-[#242526] p-8 rounded-xl shadow-lg w-full max-w-md">
@@ -104,17 +84,7 @@ export default function LoginPage() {
 
         {error && (
           <Alert variant="destructive" className="mb-4">
-            <AlertDescription>
-              {error}
-              {error.includes('verify') && (
-                <button
-                  onClick={handleResendVerification}
-                  className="ml-2 text-blue-500 hover:text-blue-400 underline"
-                >
-                  Resend verification email
-                </button>
-              )}
-            </AlertDescription>
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
