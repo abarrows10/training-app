@@ -17,11 +17,9 @@ interface NewExercise {
   coachId: string;
 }
 
-const categories = ['All', 'Hitting', 'Fielding', 'Throwing', 'Pitching', 'Band Exercises', 'Speed & Agility'];
-
 const ExerciseLibrary = () => {
   const { user } = useAuth();
-  const { exercises, addExercise, removeExercise, updateExercise, linkVideoToExercise, unlinkVideoFromExercise, setExercises } = useStore();
+  const { exercises, addExercise, categories, removeExercise, updateExercise, linkVideoToExercise, unlinkVideoFromExercise, setExercises } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -167,9 +165,13 @@ const ExerciseLibrary = () => {
                   value={newExercise.category}
                   onChange={(e) => setNewExercise({...newExercise, category: e.target.value})}
                   className="p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                  required
                 >
-                  {categories.filter(cat => cat !== 'All').map(category => (
-                    <option key={category} value={category} className="bg-[#242526] text-white">{category}</option>
+                  <option value="">Select category...</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.name} className="bg-[#242526] text-white">
+                      {category.name}
+                    </option>
                   ))}
                 </select>
 
@@ -229,33 +231,45 @@ const ExerciseLibrary = () => {
           <div className="flex flex-col gap-4">
   {/* Mobile Dropdown */}
   <select
-    value={selectedCategory}
-    onChange={(e) => setSelectedCategory(e.target.value)}
-    className="md:hidden w-full p-2 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-  >
-    {categories.map(category => (
-      <option key={category} value={category} className="bg-[#242526]">
-        {category}
-      </option>
-    ))}
-  </select>
+  value={selectedCategory}
+  onChange={(e) => setSelectedCategory(e.target.value)}
+  className="md:hidden w-full p-2 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+>
+  <option value="All">All</option>
+  {categories.map(category => (
+    <option key={category.id} value={category.name} className="bg-[#242526]">
+      {category.name}
+    </option>
+  ))}
+</select>
 
   {/* Desktop Category Buttons */}
   <div className="hidden md:flex flex-row gap-2 flex-wrap">
-    {categories.map(category => (
-      <button
-        key={category}
-        onClick={() => setSelectedCategory(category)}
-        className={`px-4 py-2 rounded text-center transition-colors ${
-          selectedCategory === category 
-            ? 'bg-[#00A3E0] text-white' 
-            : 'border border-[#3A3B3C] text-white hover:bg-[#3A3B3C]'
-        }`}
-      >
-        {category}
-      </button>
-    ))}
-  </div>
+  <button
+    key="all"
+    onClick={() => setSelectedCategory('All')}
+    className={`px-4 py-2 rounded text-center transition-colors ${
+      selectedCategory === 'All' 
+        ? 'bg-[#00A3E0] text-white' 
+        : 'border border-[#3A3B3C] text-white hover:bg-[#3A3B3C]'
+    }`}
+  >
+    All
+  </button>
+  {categories.map(category => (
+    <button
+      key={category.id}
+      onClick={() => setSelectedCategory(category.name)}
+      className={`px-4 py-2 rounded text-center transition-colors ${
+        selectedCategory === category.name 
+          ? 'bg-[#00A3E0] text-white' 
+          : 'border border-[#3A3B3C] text-white hover:bg-[#3A3B3C]'
+      }`}
+    >
+      {category.name}
+    </button>
+  ))}
+</div>
 </div>
         </div>
 
@@ -275,9 +289,13 @@ const ExerciseLibrary = () => {
                       value={editForm.category}
                       onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                       className="w-full p-2 bg-[#242526] border border-[#3A3B3C] rounded text-white focus:border-[#00A3E0] focus:outline-none"
+                      required
                     >
-                      {categories.filter(cat => cat !== 'All').map(category => (
-                        <option key={category} value={category} className="bg-[#242526] text-white">{category}</option>
+                      <option value="">Select category...</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.name} className="bg-[#242526] text-white">
+                          {category.name}
+                        </option>
                       ))}
                     </select>
                     <textarea
