@@ -3,17 +3,19 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dumbbell, User, Users, Calendar, PlaySquare, Home, Menu, X, ChartNoAxesCombined, Video, LogOut } from 'lucide-react';
+import { Menu, Dumbbell, PlaySquare, Calendar, Users, Video, ChartNoAxesCombined, User, Home, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function AccountManagement() {
-  const { user, profile, updateUserEmail, updateUserPassword } = useAuth();
+  const { user, profile, updateUserEmail, updateUserPassword, logout } = useAuth();
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const router = useRouter();
 
   const handleEmailUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,28 +56,45 @@ export default function AccountManagement() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   const getRoleDisplay = () => {
     if (profile?.isAdmin) return 'Super Admin';
     return profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Unknown';
   };
 
-  const navItems = profile?.role === 'coach' ? [
-    { href: '/account', label: 'Account', icon: User }, 
-  { href: '/coach/exercises', label: 'Exercise Library', icon: Dumbbell },
-   { href: '/coach/sequences', label: 'Sequences', icon: PlaySquare },
-   { href: '/coach/workouts', label: 'Workouts', icon: Calendar },
-   { href: '/coach/assignments', label: 'Assignments', icon: Calendar },
-   { href: '/coach/athletes', label: 'Athletes', icon: Users },
-   { href: '/coach/videos', label: 'Videos', icon: PlaySquare },
-   { href: '/coach/video-analysis', label: 'Video Analysis', icon: Video },
-   { href: '/coach/analytics', label: 'Analytics', icon: ChartNoAxesCombined },
-  ] : [
-    { href: '/athlete/workouts', label: 'My Workouts', icon: Dumbbell }
-  ];
+  const getNavItems = () => {
+    if (profile?.role === 'coach') {
+      return [
+        { href: '/account', label: 'Account', icon: User },
+        { href: '/coach/exercises', label: 'Exercise Library', icon: Dumbbell },
+        { href: '/coach/sequences', label: 'Sequences', icon: PlaySquare },
+        { href: '/coach/workouts', label: 'Workouts', icon: Calendar },
+        { href: '/coach/assignments', label: 'Assignments', icon: Calendar },
+        { href: '/coach/athletes', label: 'Athletes', icon: Users },
+        { href: '/coach/videos', label: 'Videos', icon: PlaySquare },
+        { href: '/coach/video-analysis', label: 'Video Analysis', icon: Video },
+        { href: '/coach/analytics', label: 'Analytics', icon: ChartNoAxesCombined },
+      ];
+    } else {
+      return [
+        { href: '/account', label: 'Account', icon: User },
+        { href: '/athlete/workouts', label: 'My Workouts', icon: Dumbbell }
+      ];
+    }
+  };
+
+  const navItems = getNavItems();
 
   return (
     <div className="min-h-screen flex bg-[#18191A] relative">
-      {/* Mobile Navigation Button */}
       <button
         onClick={() => setIsNavOpen(!isNavOpen)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-[#242526] text-white hover:bg-[#3A3B3C] transition-colors"
@@ -83,7 +102,6 @@ export default function AccountManagement() {
         <Menu className="w-6 h-6" />
       </button>
 
-      {/* Navigation Overlay */}
       {isNavOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
@@ -91,30 +109,45 @@ export default function AccountManagement() {
         />
       )}
 
-      {/* Navigation Menu */}
       <nav className={`
         fixed lg:static w-72 bg-[#242526] min-h-screen p-6 z-40
         transition-transform duration-300 ease-in-out
         ${isNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
+        <Link 
+          href="/" 
+          className="block text-xl font-bold mb-12 text-white hover:text-[#00A3E0] transition-colors flex items-center gap-3"
+          onClick={() => setIsNavOpen(false)}
+        >
+          <Home className="w-7 h-7" />
+          Blakely & Baylor's Training
+        </Link>
+
         <div className="space-y-2">
-          {navItems.map(({ href, label }) => (
+          {navItems.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
               onClick={() => setIsNavOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-[#3A3B3C] hover:text-white transition-colors"
             >
+              <Icon className="w-5 h-5" />
               {label}
             </Link>
           ))}
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-500 hover:bg-[#3A3B3C] transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            Sign Out
+          </button>
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 mt-12 lg:mt-0">
         <div className="max-w-2xl mx-auto space-y-8">
-          {/* Account Details */}
           <div className="bg-[#242526] rounded-xl p-6 shadow-lg">
             <h2 className="text-xl font-bold text-white mb-4">Account Details</h2>
             
@@ -138,7 +171,6 @@ export default function AccountManagement() {
             </div>
           </div>
 
-          {/* Update Email */}
           <div className="bg-[#242526] rounded-xl p-6 shadow-lg">
             <h2 className="text-xl font-bold text-white mb-4">Update Email</h2>
             
@@ -163,7 +195,6 @@ export default function AccountManagement() {
             </form>
           </div>
 
-          {/* Update Password */}
           <div className="bg-[#242526] rounded-xl p-6 shadow-lg">
             <h2 className="text-xl font-bold text-white mb-4">Update Password</h2>
             
@@ -199,7 +230,6 @@ export default function AccountManagement() {
             </form>
           </div>
 
-          {/* Error/Success Messages */}
           {error && (
             <Alert variant="destructive" className="mt-4">
               <AlertDescription>{error}</AlertDescription>
