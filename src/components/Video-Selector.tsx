@@ -3,6 +3,7 @@
 import React from 'react';
 import { Play, Trash } from 'lucide-react';
 import { useStore } from '@/store';
+import { parseVideoUrl } from '@/utils/videoUtils';
 
 interface VideoSelectorProps {
   exerciseId: string;
@@ -17,9 +18,7 @@ const VideoSelector: React.FC<VideoSelectorProps> = ({
 }) => {
   const { videos, exercises } = useStore();
   
-  // Find the current exercise
   const currentExercise = exercises.find(e => e.id === exerciseId);
-  // Only get videos that belong to this exercise
   const exerciseVideos = videos.filter(video => 
     currentExercise?.videoIds?.includes(video.id)
   );
@@ -32,6 +31,11 @@ const VideoSelector: React.FC<VideoSelectorProps> = ({
       </div>
     );
   }
+
+  const getVideoType = (url: string) => {
+    const { type } = parseVideoUrl(url);
+    return type || 'unknown';
+  };
 
   return (
     <div className="mt-4">
@@ -55,7 +59,7 @@ const VideoSelector: React.FC<VideoSelectorProps> = ({
                 <Play className="w-8 h-8 text-white" />
               </button>
               <div className="absolute top-2 right-2 bg-black bg-opacity-75 px-2 py-1 rounded text-xs text-white">
-                {video.type === 'youtube' ? 'YouTube' : 'Vimeo'}
+                {getVideoType(video.url)}
               </div>
             </div>
             

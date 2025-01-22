@@ -1,35 +1,41 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { Plus, Edit, Trash, X, Check } from 'lucide-react';
 import { useStore } from '@/store';
+import { useAuth } from '@/context/AuthContext';
 import { Athlete } from '@/types/interfaces';
 
 interface AthleteForm {
   name: string;
   position: string;
   notes: string;
+  coachId: string;
 }
 
 const AthleteManagement = () => {
+  const { user } = useAuth();
   const { athletes, addAthlete, updateAthlete, removeAthlete } = useStore();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newAthlete, setNewAthlete] = useState<AthleteForm>({
     name: '',
     position: '',
-    notes: ''
+    notes: '',
+    coachId: user?.uid || ''
   });
   const [editForm, setEditForm] = useState<AthleteForm>({
     name: '',
     position: '',
-    notes: ''
+    notes: '',
+    coachId: user?.uid || ''
   });
 
   const handleAddAthlete = (e: React.FormEvent) => {
     e.preventDefault();
-    addAthlete(newAthlete);
-    setNewAthlete({ name: '', position: '', notes: '' });
+    if (!user?.uid) return;
+    addAthlete({ ...newAthlete, coachId: user.uid });
+    setNewAthlete({ name: '', position: '', notes: '', coachId: user.uid });
     setShowAddForm(false);
   };
 
@@ -38,13 +44,14 @@ const AthleteManagement = () => {
     setEditForm({
       name: athlete.name,
       position: athlete.position,
-      notes: athlete.notes
+      notes: athlete.notes,
+      coachId: athlete.coachId
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditForm({ name: '', position: '', notes: '' });
+    setEditForm({ name: '', position: '', notes: '', coachId: user?.uid || '' });
   };
 
   const handleEditSave = (id: string) => {

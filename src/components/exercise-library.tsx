@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Exercise } from '@/types/interfaces';
 import { Search, Plus, Video, Trash, Edit, X, Check } from 'lucide-react';
 import { useStore } from '@/store';
+import { useAuth } from '@/context/AuthContext';
 import VideoSelector from './Video-Selector';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
@@ -13,11 +14,13 @@ interface NewExercise {
   category: string;
   description: string;
   videoIds: string[];
+  coachId: string;
 }
 
 const categories = ['All', 'Hitting', 'Fielding', 'Throwing', 'Pitching', 'Band Exercises', 'Speed & Agility'];
 
 const ExerciseLibrary = () => {
+  const { user } = useAuth();
   const { exercises, addExercise, removeExercise, updateExercise, linkVideoToExercise, unlinkVideoFromExercise, setExercises } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -27,18 +30,23 @@ const ExerciseLibrary = () => {
     name: '',
     category: 'Hitting',
     description: '',
-    videoIds: []
+    videoIds: [],
+    coachId: user?.uid || ''
   });
   const [newExercise, setNewExercise] = useState<NewExercise>({
     name: '',
     category: 'Hitting',
     description: '',
-    videoIds: []
+    videoIds: [],
+    coachId: user?.uid || ''
   });
 
   useEffect(() => {
-    console.log('Loaded exercises:', exercises);
-  }, [exercises]);
+    if (user?.uid) {
+      setNewExercise(prev => ({ ...prev, coachId: user.uid }));
+      setEditForm(prev => ({ ...prev, coachId: user.uid }));
+    }
+  }, [user]);
 
   const handleVideoSelect = (videoId: string, exerciseId: string) => {
     const exercise = exercises.find(e => e.id === exerciseId);
@@ -52,27 +60,31 @@ const ExerciseLibrary = () => {
   };
 
   const startEdit = (exercise: Exercise) => {
+    if (!user?.uid) return;
     setEditingId(exercise.id);
     setEditForm({
       name: exercise.name,
       category: exercise.category,
       description: exercise.description,
-      videoIds: exercise.videoIds
+      videoIds: exercise.videoIds,
+      coachId: user.uid
     });
-  };
-
-  const cancelEdit = () => {
+   };
+   
+   const cancelEdit = () => {
     setEditingId(null);
     setEditForm({
       name: '',
       category: 'Hitting',
       description: '',
-      videoIds: []
+      videoIds: [],
+      coachId: user?.uid || ''
     });
-  };
+   };
 
   const saveEdit = (id: string) => {
-    updateExercise(id, editForm);
+    if (!user?.uid) return;
+    updateExercise(id, { ...editForm, coachId: user.uid });
     setEditingId(null);
   };
 
@@ -114,12 +126,14 @@ const ExerciseLibrary = () => {
 
   const handleAddExercise = (e: React.FormEvent) => {
     e.preventDefault();
-    addExercise(newExercise);
+    if (!user?.uid) return;
+    addExercise({ ...newExercise, coachId: user.uid });
     setNewExercise({
       name: '',
       category: 'Hitting',
       description: '',
-      videoIds: []
+      videoIds: [],
+      coachId: user.uid
     });
     setShowAddForm(false);
   };

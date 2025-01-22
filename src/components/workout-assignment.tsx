@@ -1,10 +1,12 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Trash } from 'lucide-react';
 import { useStore } from '@/store';
+import { useAuth } from '@/context/AuthContext';
 
 const WorkoutAssignment = () => {
+  const { user } = useAuth();
   const { athletes, workouts, scheduledWorkouts, scheduleWorkout, removeScheduledWorkout } = useStore();
   const [selectedAthlete, setSelectedAthlete] = useState<string>('');
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -13,6 +15,7 @@ const WorkoutAssignment = () => {
     athleteId: '',
     workoutId: '',
     date: '',
+    coachId: user?.uid || ''
   });
 
   const getWeekDates = (date: Date) => {
@@ -72,15 +75,21 @@ const WorkoutAssignment = () => {
     });
   };
 
-  const handleAssignWorkout = (e: React.FormEvent) => {
+  const handleAssignWorkout = async (e: React.FormEvent) => {
     e.preventDefault();
-    const selectedDate = newAssignment.date;
+    if (!user?.uid) return;
 
-    scheduleWorkout(newAssignment);
+    const selectedDate = newAssignment.date;
+    await scheduleWorkout({
+      ...newAssignment,
+      coachId: user.uid
+    });
+
     setNewAssignment({
       athleteId: '',
       workoutId: '',
-      date: selectedDate, // Keep the same date for next assignment
+      date: selectedDate,
+      coachId: user.uid
     });
     setShowAssignForm(false);
   };

@@ -1,11 +1,13 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { X, Play } from 'lucide-react';
 import { useStore } from '@/store';
+import { useAuth } from '@/context/AuthContext';
 import { parseVideoUrl, getVideoThumbnail } from '@/utils/videoUtils';
 
 const VideoUpload = () => {
+  const { user } = useAuth();
   const { videos, addVideo, removeVideo, exercises, linkVideoToExercise } = useStore();
   const [selectedExercise, setSelectedExercise] = useState<string>('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -17,6 +19,11 @@ const VideoUpload = () => {
   const handleAddVideo = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!user?.uid) {
+      setError('Please log in first');
+      return;
+    }
 
     if (!selectedExercise) {
       setError('Please select an exercise first');
@@ -31,22 +38,18 @@ const VideoUpload = () => {
     }
 
     try {
-      // Create the video entry
       const newVideo = {
         title: videoTitle || videoUrl,
         url: videoUrl,
-        type,
-        platform_id: videoId,
         thumbnail: getVideoThumbnail(type, videoId),
         uploadDate: new Date().toISOString(),
-        status: 'complete' as const
+        status: 'complete' as const,
+        coachId: user.uid
       };
 
-      // Add video and link it to the exercise
       const videoId2 = await addVideo(newVideo);
       await linkVideoToExercise(videoId2, selectedExercise);
 
-      // Reset form
       setVideoUrl('');
       setVideoTitle('');
       setError('');
@@ -59,6 +62,11 @@ const VideoUpload = () => {
   const getExerciseName = (videoId: string) => {
     const exercise = exercises.find(e => e.videoIds?.includes(videoId));
     return exercise ? exercise.name : 'Unassigned';
+  };
+
+  const getVideoType = (url: string) => {
+    const { type } = parseVideoUrl(url);
+    return type || 'unknown';
   };
 
   return (
@@ -161,7 +169,7 @@ const VideoUpload = () => {
                             Assigned to: {getExerciseName(video.id)}
                           </div>
                           <div className="text-xs text-gray-400 mt-1">
-                            Platform: {video.type.charAt(0).toUpperCase() + video.type.slice(1)}
+                            Platform: {getVideoType(video.url).charAt(0).toUpperCase() + getVideoType(video.url).slice(1)}
                           </div>
                         </div>
                         <button 
