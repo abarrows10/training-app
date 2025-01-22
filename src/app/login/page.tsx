@@ -17,10 +17,15 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const router = useRouter();
-  const { signIn, signUp, user, profile } = useAuth();
+  const { signIn, signUp, resetPassword, resendVerificationEmail, user, profile } = useAuth();
 
   useEffect(() => {
     if (user && profile) {
+      if (!user.emailVerified) {
+        setError('Please verify your email address before continuing.');
+        return;
+      }
+      
       // Route based on user role
       const routeUser = () => {
         if (profile.isAdmin) {
@@ -51,21 +56,42 @@ export default function LoginPage() {
           return;
         }
         await signUp(email, password, role);
-        if (role === 'coach') {
-          router.push('/coach/exercises');
-        } else {
-          router.push('/athlete/workouts');
-        }
+        setMessage('Account created! Please check your email to verify your account.');
+        setMode('signin');
       } else if (mode === 'signin') {
         await signIn(email, password);
+        if (user && !user.emailVerified) {
+          setError('Please verify your email address.');
+          await resendVerificationEmail();
+          return;
+        }
         // Router will handle redirect based on profile in useEffect
       } else if (mode === 'reset') {
-        // Handle reset later
+        await resetPassword(email);
         setMessage('Password reset instructions sent to your email.');
         setMode('signin');
       }
     } catch (error: any) {
-      setError(error.message || (mode === 'signup' ? 'Error creating account' : 'Invalid email or password'));
+      if (error.code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists');
+      } else if (error.code === 'auth/invalid-email') {
+        setError('Invalid email address');
+      } else if (error.code === 'auth/weak-password') {
+        setError('Password should be at least 8 characters');
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        setError('Invalid email or password');
+      } else {
+        setError(error.message || (mode === 'signup' ? 'Error creating account' : 'Invalid email or password'));
+      }
+    }
+  };
+
+  const handleResendVerification = async () => {
+    try {
+      await resendVerificationEmail();
+      setMessage('Verification email resent. Please check your inbox.');
+    } catch (error: any) {
+      setError('Error sending verification email. Please try again.');
     }
   };
 
@@ -78,7 +104,17 @@ export default function LoginPage() {
 
         {error && (
           <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              {error}
+              {error.includes('verify') && (
+                <button
+                  onClick={handleResendVerification}
+                  className="ml-2 text-blue-500 hover:text-blue-400 underline"
+                >
+                  Resend verification email
+                </button>
+              )}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -100,16 +136,18 @@ export default function LoginPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-gray-300 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
-              required
-            />
-          </div>
+          {mode !== 'reset' && (
+            <div>
+              <label className="block text-gray-300 mb-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-3 bg-[#18191A] border border-[#3A3B3C] rounded-lg text-white focus:border-[#00A3E0] focus:outline-none transition-colors"
+                required
+              />
+            </div>
+          )}
 
           {mode === 'signup' && (
             <>
