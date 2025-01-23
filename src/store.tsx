@@ -278,18 +278,20 @@ const unsubCategories = onSnapshot(
   };
 
   // Add category functions alongside other CRUD functions
-const addCategory = async (category: Omit<Category, 'id'>) => {
-  if (!user) throw new Error('Not authenticated');
-  try {
-    await addDoc(collection(db, `coaches/${user.uid}/categories`), {
-      ...category,
-      coachId: user.uid
-    });
-  } catch (error) {
-    console.error('Error adding category:', error);
-    throw error;
-  }
-};
+  const addCategory = async (category: Omit<Category, 'id'>) => {
+    if (!user) throw new Error('Not authenticated');
+    try {
+      console.log('Adding category:', category);
+      await addDoc(collection(db, `coaches/${user.uid}/categories`), {
+        ...category,
+        coachId: user.uid
+      });
+      console.log('Category added successfully');
+    } catch (error) {
+      console.error('Error adding category:', error);
+      throw error;
+    }
+  };
 
 const updateCategory = async (id: string, category: Omit<Category, 'id'>) => {
   if (!user) throw new Error('Not authenticated');
