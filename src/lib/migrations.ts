@@ -1,7 +1,7 @@
 import { db } from '@/firebase/config';
 import { doc, writeBatch, collection, getDocs, setDoc } from 'firebase/firestore';
 
-const ADMIN_UID = 'y7PHTm2TYbVfl3HYG3ufGkpumD22';
+const ADMIN_UID = 'zsIzvn4d4WhlDZiGg6iI9K3cHuS2';
 
 export async function migrateDataToAdmin() {
   let status = {
