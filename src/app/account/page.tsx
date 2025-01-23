@@ -71,7 +71,7 @@ export default function AccountManagement() {
   };
 
   const getNavItems = () => {
-    if (profile?.role === 'coach') {
+    if (profile?.role === 'coach' || profile?.role === 'super_admin') {
       return [
         { href: '/account', label: 'Account', icon: User },
   { 
