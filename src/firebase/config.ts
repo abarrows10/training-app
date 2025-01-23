@@ -24,7 +24,7 @@ console.log('FIREBASE CONFIG USED:', {
 
 if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.includes('test') ||
     process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.includes('test')) {
-  console.error('WARNING: Database environment mismatch!');
+  console.error('WARNING: Environment mismatch!');
   throw new Error('Must use test database in development and production database in production');
 }
 
