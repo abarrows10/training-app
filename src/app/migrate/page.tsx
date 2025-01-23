@@ -16,17 +16,28 @@ export default function DataMigration() {
       return;
     }
 
-    const stats = { exercises: 0, sequences: 0, workouts: 0, videos: 0, athletes: 0, assignments: 0 };
+    const stats = { exercises: 0, sequences: 0, workouts: 0, videos: 0, athletes: 0, assignments: 0, categories: 0 };
     
     try {
-      // Migrate exercises
+      // Get all unique categories from exercises
       const exercisesSnap = await getDocs(collection(db, 'exercises'));
-      for (const exerciseDoc of exercisesSnap.docs) {
+      const uniqueCategories = new Set<string>();
+      exercisesSnap.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.category) uniqueCategories.add(data.category);
+      });
+
+      // Migrate categories
+      for (const categoryName of uniqueCategories) {
         await setDoc(
-          doc(db, `coaches/${user.uid}/exercises/${exerciseDoc.id}`),
-          { ...exerciseDoc.data(), coachId: user.uid }
+          doc(db, `coaches/${user.uid}/content/categories/${categoryName.toLowerCase().replace(/\s+/g, '-')}`),
+          {
+            name: categoryName,
+            coachId: user.uid,
+            isDefault: true
+          }
         );
-        stats.exercises++;
+        stats.categories++;
       }
 
       // Migrate sequences
@@ -104,13 +115,14 @@ export default function DataMigration() {
 
           {Object.keys(status).length > 0 && (
             <div className="mt-6 space-y-2 text-white">
-              <p>Exercises migrated: {status.exercises}</p>
-              <p>Sequences migrated: {status.sequences}</p>
-              <p>Workouts migrated: {status.workouts}</p>
-              <p>Videos migrated: {status.videos}</p>
-              <p>Athletes migrated: {status.athletes}</p>
-              <p>Assignments migrated: {status.assignments}</p>
-            </div>
+            <p>Categories migrated: {status.categories}</p>
+            <p>Exercises migrated: {status.exercises}</p>
+            <p>Sequences migrated: {status.sequences}</p>
+            <p>Workouts migrated: {status.workouts}</p>
+            <p>Videos migrated: {status.videos}</p>
+            <p>Athletes migrated: {status.athletes}</p>
+            <p>Assignments migrated: {status.assignments}</p>
+          </div>
           )}
 
           {error && (

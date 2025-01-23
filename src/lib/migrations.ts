@@ -11,6 +11,7 @@ export async function migrateDataToAdmin() {
     athletes: 0,
     assignments: 0,
     videos: 0,
+    categories: 0,
     errors: [] as string[]
   };
 
@@ -26,8 +27,25 @@ export async function migrateDataToAdmin() {
       createdAt: new Date().toISOString()
     });
 
-    // Migrate exercises
+    // Get all unique categories from exercises
     const exercisesSnap = await getDocs(collection(db, 'exercises'));
+    const uniqueCategories = new Set<string>();
+    exercisesSnap.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.category) uniqueCategories.add(data.category);
+    });
+
+    // Migrate categories
+    for (const categoryName of uniqueCategories) {
+      await setDoc(doc(db, 'coaches', ADMIN_UID, 'content', 'categories', categoryName.toLowerCase().replace(/\s+/g, '-')), {
+        name: categoryName,
+        coachId: ADMIN_UID,
+        isDefault: true
+      });
+      status.categories++;
+    }
+
+    // Migrate exercises
     for (const docSnap of exercisesSnap.docs) {
       const data = docSnap.data();
       await setDoc(doc(db, 'coaches', ADMIN_UID, 'content', 'exercises', docSnap.id), {

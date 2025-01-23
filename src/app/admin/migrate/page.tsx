@@ -39,13 +39,14 @@ export default function MigratePage() {
 
           {status && (
             <div className="mt-6 space-y-2 text-white">
-              <p>Exercises migrated: {status.exercises}</p>
-              <p>Sequences migrated: {status.sequences}</p>
-              <p>Workouts migrated: {status.workouts}</p>
-              <p>Athletes migrated: {status.athletes}</p>
-              <p>Assignments migrated: {status.assignments}</p>
-              <p>Videos migrated: {status.videos}</p>
-            </div>
+            <p>Categories migrated: {status.categories}</p>
+            <p>Exercises migrated: {status.exercises}</p>
+            <p>Sequences migrated: {status.sequences}</p>
+            <p>Workouts migrated: {status.workouts}</p>
+            <p>Athletes migrated: {status.athletes}</p>
+            <p>Assignments migrated: {status.assignments}</p>
+            <p>Videos migrated: {status.videos}</p>
+          </div>
           )}
 
           {error && (
