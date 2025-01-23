@@ -13,6 +13,7 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '@/firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 type UserRole = 'super_admin' | 'coach' | 'athlete';
 
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -60,20 +62,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsAdmin(!!userProfile.isAdmin);
           } else {
             console.log('No user document exists');
+            router.push('/login');
           }
         } catch (error) {
           console.error('Error fetching user profile:', error);
+          router.push('/login');
         }
       } else {
+        console.log('No user authenticated - redirecting to login');
         setProfile(null);
         setIsAdmin(false);
+        router.push('/login');
       }
       setUser(user);
       setLoading(false);
     });
-
+ 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   const signIn = async (email: string, password: string) => {
     try {
