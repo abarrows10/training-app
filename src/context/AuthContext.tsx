@@ -48,13 +48,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('Auth state changed:', user?.email);
       if (user) {
         try {
+          console.log('Fetching user doc for:', user.uid);
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const userProfile = userDoc.data() as UserProfile;
+            console.log('User profile found:', userProfile);
             setProfile(userProfile);
             setIsAdmin(!!userProfile.isAdmin);
+          } else {
+            console.log('No user document exists');
           }
         } catch (error) {
           console.error('Error fetching user profile:', error);
@@ -72,9 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('Starting sign in...');
       const result = await signInWithEmailAndPassword(auth, email, password);
+      console.log('Sign in successful:', result);
       const token = await result.user.getIdToken();
+      console.log('Token generated:', token);
       document.cookie = `authToken=${token}; path=/;`;
+      console.log('Cookie set');
     } catch (error: any) {
       console.error('Sign in error:', error);
       throw error;
