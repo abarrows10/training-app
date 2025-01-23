@@ -113,16 +113,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
 
     // Categories listener
-const unsubCategories = onSnapshot(
-  collection(db, `coaches/${user.uid}/categories`),
-  (snapshot) => {
-    const categoryData = snapshot.docs.map(doc => ({
-      ...doc.data(),
-      id: doc.id
-    })) as Category[];
-    setCategories(categoryData);
-  }
-);
+    const unsubCategories = onSnapshot(
+      collection(db, `coaches/${user.uid}/categories`),
+      (snapshot) => {
+        console.log('Categories snapshot:', snapshot.docs);
+        const categoryData = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id
+        })) as Category[];
+        console.log('Setting categories:', categoryData);
+        setCategories(categoryData);
+      },
+      (error) => console.error('Categories listener error:', error)
+    );
 
     // Athletes listener
     const unsubAthletes = onSnapshot(
