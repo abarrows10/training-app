@@ -92,9 +92,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [progress, setProgress] = useState<ExerciseProgress[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  useEffect(() => {
-    if (!user || !profile || profile.role !== 'coach') return;
+  console.log('Store Provider mounted, user:', user?.uid, 'profile:', profile);
 
+  useEffect(() => {
+    if (!user || !profile || (profile.role !== 'coach' && profile.role !== 'super_admin')) return;
+
+    console.log('useEffect triggered, user:', user?.uid, 'profile:', profile?.role);
     console.log('Setting up Firestore listeners for coach:', user.uid);
 
     // Exercises listener
