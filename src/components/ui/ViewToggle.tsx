@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
 const ViewToggle = () => {
+  const router = useRouter()
   const { viewMode, toggleViewMode, profile } = useAuth()
   const [isAnimating, setIsAnimating] = useState(false)
 
-  // Only show toggle for coaches/admins
   if (!profile?.role || (profile.role !== 'coach' && profile.role !== 'super_admin')) {
     return null
   }
@@ -14,6 +15,9 @@ const ViewToggle = () => {
   const handleToggle = async () => {
     setIsAnimating(true)
     await toggleViewMode()
+    // Route based on new view mode
+    const newRoute = viewMode === 'coach' ? '/athlete/workouts' : '/coach/exercises'
+    router.push(newRoute)
     setTimeout(() => setIsAnimating(false), 300)
   }
 

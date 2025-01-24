@@ -6,6 +6,7 @@ import { Dumbbell, Home, Menu, X, User, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import ViewToggle from '@/components/ui/ViewToggle'
 
 export default function AthleteLayout({
   children,
@@ -58,13 +59,15 @@ export default function AthleteLayout({
         ${isNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <Link 
-          href="/" 
+          href="/athlete/workouts" 
           className="block text-xl font-bold mb-12 text-white hover:text-[#00A3E0] transition-colors flex items-center gap-3"
           onClick={closeNav}
         >
           <Home className="w-7 h-7" />
           Blakely & Baylor's Training
         </Link>
+
+        <ViewToggle />
 
         <div className="space-y-2">
           {navItems.map(({ href, label, icon: Icon }) => (

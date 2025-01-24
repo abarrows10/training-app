@@ -101,8 +101,8 @@ export default function CoachLayout({
         ${isNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <Link 
-          href="/" 
-          className="block text-xl font-bold mb-12 text-white hover:text-[#00A3E0] transition-colors flex items-center gap-3"
+          href="/coach/exercises" // Changed from "/"
+          className="block text-xl font-bold mb-6 text-white hover:text-[#00A3E0] transition-colors flex items-center gap-3"
           onClick={closeNav}
         >
           <Home className="w-7 h-7" />
