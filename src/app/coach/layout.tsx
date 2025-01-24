@@ -6,7 +6,9 @@ import {
   Dumbbell, 
   User, 
   Users, 
-  Calendar, 
+  Calendar1,
+  Layers,
+  ListPlus,
   PlaySquare, 
   Home, 
   Menu, 
@@ -41,9 +43,9 @@ const navItems: NavItem[] = [
       { href: '/coach/categories', label: 'Categories', icon: Tag }
     ]
   },
-  { href: '/coach/sequences', label: 'Sequences', icon: PlaySquare },
-  { href: '/coach/workouts', label: 'Workouts', icon: Calendar },
-  { href: '/coach/assignments', label: 'Assignments', icon: Calendar },
+  { href: '/coach/sequences', label: 'Sequences', icon: Layers },
+  { href: '/coach/workouts', label: 'Workouts', icon: ListPlus },
+  { href: '/coach/assignments', label: 'Assignments', icon: Calendar1 },
   { href: '/coach/athletes', label: 'Athletes', icon: Users },
   { href: '/coach/videos', label: 'Videos', icon: PlaySquare },
   { href: '/coach/video-analysis', label: 'Video Analysis', icon: Video },
