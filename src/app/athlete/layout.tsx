@@ -6,6 +6,7 @@ import { Dumbbell, Home, Menu, X, User, LogOut, ListPlus } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import ViewToggle from '@/components/ui/ViewToggle';
 
 export default function AthleteLayout({
   children,
@@ -39,7 +40,7 @@ export default function AthleteLayout({
     <div className="min-h-screen flex bg-[#18191A] relative">
       <button
         onClick={() => setIsNavOpen(!isNavOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-[#242526] text-white hover:bg-[#3A3B3C] transition-colors"
+        className="xl:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-[#242526] text-white hover:bg-[#3A3B3C] transition-colors"
         aria-label="Toggle menu"
       >
         {isNavOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -47,17 +48,17 @@ export default function AthleteLayout({
 
       {isNavOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 xl:hidden"
           onClick={closeNav}
         ></div>
       )}
 
       <nav className={`
-        fixed lg:static w-72 bg-[#242526] min-h-screen z-40
+        fixed xl:static w-72 bg-[#242526] min-h-screen z-40
         transition-transform duration-300 ease-in-out
-        ${isNavOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        ${isNavOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'}
       `}>
-        <div className="p-6 md:p-6 pt-16 md:pt-6">
+        <div className="p-6 xl:p-6 pt-16 xl:pt-6">
           <Link 
             href="/athlete/workouts" 
             className="block text-xl font-bold mb-12 text-white hover:text-[#00A3E0] transition-colors flex items-center gap-3"
@@ -66,6 +67,8 @@ export default function AthleteLayout({
             <Home className="w-7 h-7" />
             Blakely & Baylor's Training
           </Link>
+
+          <ViewToggle />
 
           <div className="space-y-2">
             {navItems.map(({ href, label, icon: Icon }) => (
@@ -97,7 +100,7 @@ export default function AthleteLayout({
         </div>
       </nav>
 
-      <main className="flex-1 p-4 lg:p-8 mt-12 lg:mt-0">
+      <main className="flex-1 p-4 xl:p-8 mt-12 xl:mt-0">
         {children}
       </main>
     </div>
