@@ -39,7 +39,7 @@ export default function AthleteLayout({
     <div className="min-h-screen flex bg-[#18191A] relative">
       <button
         onClick={() => setIsNavOpen(!isNavOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-[#242526] text-white hover:bg-[#3A3B3C] transition-colors"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-[#242526] text-white hover:bg-[#3A3B3C] transition-colors"
         aria-label="Toggle menu"
       >
         {isNavOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -47,13 +47,13 @@ export default function AthleteLayout({
 
       {isNavOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
           onClick={closeNav}
         ></div>
       )}
 
       <nav className={`
-        fixed md:static w-72 bg-[#242526] min-h-screen z-40
+        fixed lg:static w-72 bg-[#242526] min-h-screen z-40
         transition-transform duration-300 ease-in-out
         ${isNavOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
