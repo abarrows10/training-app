@@ -37,6 +37,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   isAdmin: boolean;
   setActiveCoachId: (coachId: string) => Promise<void>;
+  viewMode: 'coach' | 'athlete';
+  toggleViewMode: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -47,6 +49,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
+  const [viewMode, setViewMode] = useState<'coach' | 'athlete'>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('viewMode') as 'coach' | 'athlete' || 'coach';
+    }
+    return 'coach';
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -130,6 +138,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+      // Update toggleViewMode function
+  const toggleViewMode = async () => {
+  const newMode = viewMode === 'coach' ? 'athlete' : 'coach'
+  setViewMode(newMode)
+  
+  // Update both localStorage and cookie
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('viewMode', newMode)
+    document.cookie = `viewMode=${newMode}; path=/;`
+  }
+  
+  // Redirect based on new mode
+  if (newMode === 'athlete') {
+    router.push('/athlete/workouts')
+  } else {
+    router.push('/coach/exercises')
+  }
+}
+
   const resetPassword = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email, {
@@ -199,6 +226,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         isAdmin,
         setActiveCoachId,
+        viewMode,
+        toggleViewMode,
       }}
     >
       {!loading && children}

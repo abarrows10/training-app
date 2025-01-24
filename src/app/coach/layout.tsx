@@ -21,6 +21,7 @@ import {
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import ViewToggle from '@/components/ui/ViewToggle'
 
 interface NavItem {
   href: string;
@@ -107,6 +108,8 @@ export default function CoachLayout({
           <Home className="w-7 h-7" />
           Blakely & Baylor's Training
         </Link>
+
+        <ViewToggle />
 
         <div className="space-y-2">
           {navItems.map((item) => (
