@@ -1,9 +1,23 @@
 import { db } from '@/firebase/config';
 import { doc, writeBatch, collection, getDocs, setDoc } from 'firebase/firestore';
 
-const ADMIN_UID = 'y7PHTm2TYbVfl3HYG3ufGkpumD22';
+const ADMIN_UID = 'zsIzvn4d4WhlDZiGg6iI9K3cHuS2';
+
+export async function testAccess() {
+  try {
+    const testSnap = await getDocs(collection(db, 'exercises'));
+    console.log('Test data count:', testSnap.docs.length);
+    testSnap.docs.forEach(doc => {
+      console.log('Document data:', doc.data());
+    });
+  } catch (error) {
+    console.error('DB access error:', error);
+  }
+}
 
 export async function migrateDataToAdmin() {
+  await testAccess();
+  
   let status = {
     exercises: 0,
     sequences: 0,
@@ -18,7 +32,7 @@ export async function migrateDataToAdmin() {
   try {
     // Set admin user
     await setDoc(doc(db, 'users', ADMIN_UID), {
-      role: 'coach',
+      role: 'super_admin',
       isAdmin: true
     }, { merge: true });
 
@@ -37,7 +51,7 @@ export async function migrateDataToAdmin() {
 
     // Migrate categories
     for (const categoryName of uniqueCategories) {
-      await setDoc(doc(db, 'coaches', ADMIN_UID, 'content', 'categories', categoryName.toLowerCase().replace(/\s+/g, '-')), {
+      await setDoc(doc(db, `coaches/${ADMIN_UID}/categories/${categoryName.toLowerCase().replace(/\s+/g, '-')}`), {
         name: categoryName,
         coachId: ADMIN_UID,
         isDefault: true
@@ -48,7 +62,7 @@ export async function migrateDataToAdmin() {
     // Migrate exercises
     for (const docSnap of exercisesSnap.docs) {
       const data = docSnap.data();
-      await setDoc(doc(db, 'coaches', ADMIN_UID, 'content', 'exercises', docSnap.id), {
+      await setDoc(doc(db, `coaches/${ADMIN_UID}/exercises/${docSnap.id}`), {
         ...data,
         coachId: ADMIN_UID
       });
@@ -59,7 +73,7 @@ export async function migrateDataToAdmin() {
     const sequencesSnap = await getDocs(collection(db, 'sequences'));
     for (const docSnap of sequencesSnap.docs) {
       const data = docSnap.data();
-      await setDoc(doc(db, 'coaches', ADMIN_UID, 'content', 'sequences', docSnap.id), {
+      await setDoc(doc(db, `coaches/${ADMIN_UID}/sequences/${docSnap.id}`), {
         ...data,
         coachId: ADMIN_UID
       });
@@ -70,7 +84,7 @@ export async function migrateDataToAdmin() {
     const workoutsSnap = await getDocs(collection(db, 'workouts'));
     for (const docSnap of workoutsSnap.docs) {
       const data = docSnap.data();
-      await setDoc(doc(db, 'coaches', ADMIN_UID, 'content', 'workouts', docSnap.id), {
+      await setDoc(doc(db, `coaches/${ADMIN_UID}/workouts/${docSnap.id}`), {
         ...data,
         coachId: ADMIN_UID
       });
@@ -81,7 +95,7 @@ export async function migrateDataToAdmin() {
     const athletesSnap = await getDocs(collection(db, 'athletes'));
     for (const docSnap of athletesSnap.docs) {
       const data = docSnap.data();
-      await setDoc(doc(db, 'coaches', ADMIN_UID, 'athletes', docSnap.id), {
+      await setDoc(doc(db, `coaches/${ADMIN_UID}/athletes/${docSnap.id}`), {
         ...data,
         coachId: ADMIN_UID
       });
@@ -92,7 +106,7 @@ export async function migrateDataToAdmin() {
     const assignmentsSnap = await getDocs(collection(db, 'scheduledWorkouts'));
     for (const docSnap of assignmentsSnap.docs) {
       const data = docSnap.data();
-      await setDoc(doc(db, 'coaches', ADMIN_UID, 'content', 'assignments', docSnap.id), {
+      await setDoc(doc(db, `coaches/${ADMIN_UID}/assignments/${docSnap.id}`), {
         ...data,
         coachId: ADMIN_UID
       });
@@ -103,7 +117,7 @@ export async function migrateDataToAdmin() {
     const videosSnap = await getDocs(collection(db, 'videos'));
     for (const docSnap of videosSnap.docs) {
       const data = docSnap.data();
-      await setDoc(doc(db, 'coaches', ADMIN_UID, 'content', 'videos', docSnap.id), {
+      await setDoc(doc(db, `coaches/${ADMIN_UID}/videos/${docSnap.id}`), {
         ...data,
         coachId: ADMIN_UID
       });

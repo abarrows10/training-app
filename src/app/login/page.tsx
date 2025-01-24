@@ -24,7 +24,7 @@ export default function LoginPage() {
       // Route based on user role
       const routeUser = () => {
         if (profile.isAdmin) {
-          router.push('/admin/dashboard');
+          router.push('/coach/exercises');
         } else if (profile.role === 'coach') {
           router.push('/coach/exercises');
         } else {

@@ -92,52 +92,75 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [progress, setProgress] = useState<ExerciseProgress[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  useEffect(() => {
-    if (!user || !profile || profile.role !== 'coach') return;
+  console.log('Store Provider mounted, user:', user?.uid, 'profile:', profile);
 
+  useEffect(() => {
+    if (!user || !profile || (profile.role !== 'coach' && profile.role !== 'super_admin')) return;
+
+    console.log('useEffect triggered, user:', user?.uid, 'profile:', profile?.role);
     console.log('Setting up Firestore listeners for coach:', user.uid);
 
     // Exercises listener
-    const unsubExercises = onSnapshot(
-      collection(db, `coaches/${user.uid}/exercises`),
-      (snapshot) => {
-        const exerciseData = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id,
-          docId: doc.id,
-          videoIds: (doc.data().videoIds || []).map(String)
-        })) as Exercise[];
-        setExercises(exerciseData);
-      },
-      (error) => console.error('Exercises listener error:', error)
-    );
+const unsubExercises = onSnapshot(
+  collection(db, `coaches/${user.uid}/exercises`),
+  (snapshot) => {
+    console.log('Exercises snapshot received, docs:', snapshot.docs.length);
+    const exerciseData = snapshot.docs.map(doc => {
+      console.log('Processing exercise doc:', doc.id, doc.data());
+      return {
+        ...doc.data(),
+        id: doc.id,
+        docId: doc.id,
+        name: doc.data().name || doc.id,
+        videoIds: (doc.data().videoIds || []).map(String)
+      };
+    }) as Exercise[];
+    console.log('Setting exercises:', exerciseData);
+    setExercises(exerciseData);
+  },
+  (error) => console.error('Exercises listener error:', error)
+);
 
-    // Categories listener
+// Categories listener
 const unsubCategories = onSnapshot(
   collection(db, `coaches/${user.uid}/categories`),
   (snapshot) => {
-    const categoryData = snapshot.docs.map(doc => ({
-      ...doc.data(),
-      id: doc.id
-    })) as Category[];
+    console.log('Categories snapshot received, docs:', snapshot.docs.length);
+    const categoryData = snapshot.docs.map(doc => {
+      console.log('Processing category doc:', doc.id, doc.data());
+      return {
+        ...doc.data(),
+        id: doc.id,
+        name: doc.data().name || doc.id
+      };
+    }) as Category[];
+    console.log('Setting categories:', categoryData);
     setCategories(categoryData);
-  }
+  },
+  (error) => console.error('Categories listener error:', error)
 );
 
-    // Athletes listener
-    const unsubAthletes = onSnapshot(
-      collection(db, `coaches/${user.uid}/athletes`),
-      (snapshot) => {
-        const athleteData = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        })) as Athlete[];
-        setAthletes(athleteData);
-      }
-    );
+// Athletes listener
+const unsubAthletes = onSnapshot(
+  collection(db, `coaches/${user.uid}/athletes`),
+  (snapshot) => {
+    console.log('Athletes snapshot received, docs:', snapshot.docs.length);
+    const athleteData = snapshot.docs.map(doc => {
+      console.log('Processing athlete doc:', doc.id, doc.data());
+      return {
+        ...doc.data(),
+        id: doc.id,
+        name: doc.data().name || doc.id
+      };
+    }) as Athlete[];
+    console.log('Setting athletes:', athleteData);
+    setAthletes(athleteData);
+  },
+  (error) => console.error('Athletes listener error:', error)
+);
 
-    // Sequences listener
-    const unsubSequences = onSnapshot(
+// Sequences listener
+const unsubSequences = onSnapshot(
   collection(db, `coaches/${user.uid}/sequences`),
   (snapshot) => {
     console.log('Sequences snapshot received, docs:', snapshot.docs.length);
@@ -146,6 +169,7 @@ const unsubCategories = onSnapshot(
       return {
         ...doc.data(),
         id: doc.id,
+        name: doc.data().name || doc.id,
         drills: doc.data().drills.map((drill: any) => ({
           ...drill,
           id: String(drill.id),
@@ -153,77 +177,104 @@ const unsubCategories = onSnapshot(
         }))
       };
     }) as DrillSequence[];
-    console.log('Processed sequences:', sequenceData);
+    console.log('Setting sequences:', sequenceData);
     setSequences(sequenceData);
-  }
+  },
+  (error) => console.error('Sequences listener error:', error)
 );
 
-    // Workouts listener
-    const unsubWorkouts = onSnapshot(
-      collection(db, `coaches/${user.uid}/workouts`),
-      (snapshot) => {
-        const workoutData = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id,
-          items: doc.data().items.map((item: any) => ({
-            ...item,
-            id: String(item.id),
-            itemId: String(item.itemId)
-          }))
-        })) as Workout[];
-        setWorkouts(workoutData);
-      }
-    );
+// Workouts listener
+const unsubWorkouts = onSnapshot(
+  collection(db, `coaches/${user.uid}/workouts`),
+  (snapshot) => {
+    console.log('Workouts snapshot received, docs:', snapshot.docs.length);
+    const workoutData = snapshot.docs.map(doc => {
+      console.log('Processing workout doc:', doc.id, doc.data());
+      return {
+        ...doc.data(),
+        id: doc.id,
+        name: doc.data().name || doc.id,
+        items: doc.data().items.map((item: any) => ({
+          ...item,
+          id: String(item.id),
+          itemId: String(item.itemId)
+        }))
+      };
+    }) as Workout[];
+    console.log('Setting workouts:', workoutData);
+    setWorkouts(workoutData);
+  },
+  (error) => console.error('Workouts listener error:', error)
+);
 
-    // Scheduled Workouts listener
-    const unsubScheduled = onSnapshot(
-      collection(db, `coaches/${user.uid}/assignments`),
-      (snapshot) => {
-        const scheduledData = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id,
-          workoutId: String(doc.data().workoutId),
-          athleteId: String(doc.data().athleteId)
-        })) as ScheduledWorkout[];
-        setScheduledWorkouts(scheduledData);
-      }
-    );
+// Scheduled Workouts listener
+const unsubScheduled = onSnapshot(
+  collection(db, `coaches/${user.uid}/assignments`),
+  (snapshot) => {
+    console.log('Scheduled workouts snapshot received, docs:', snapshot.docs.length);
+    const scheduledData = snapshot.docs.map(doc => {
+      console.log('Processing scheduled workout doc:', doc.id, doc.data());
+      return {
+        ...doc.data(),
+        id: doc.id,
+        workoutId: String(doc.data().workoutId),
+        athleteId: String(doc.data().athleteId)
+      };
+    }) as ScheduledWorkout[];
+    console.log('Setting scheduled workouts:', scheduledData);
+    setScheduledWorkouts(scheduledData);
+  },
+  (error) => console.error('Scheduled workouts listener error:', error)
+);
 
-    // Videos listener
-    const unsubVideos = onSnapshot(
-      collection(db, `coaches/${user.uid}/videos`),
-      (snapshot) => {
-        const videoData = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        })) as Video[];
-        setVideos(videoData);
-      }
-    );
+// Videos listener
+const unsubVideos = onSnapshot(
+  collection(db, `coaches/${user.uid}/videos`),
+  (snapshot) => {
+    console.log('Videos snapshot received, docs:', snapshot.docs.length);
+    const videoData = snapshot.docs.map(doc => {
+      console.log('Processing video doc:', doc.id, doc.data());
+      return {
+        ...doc.data(),
+        id: doc.id,
+        title: doc.data().title || doc.id
+      };
+    }) as Video[];
+    console.log('Setting videos:', videoData);
+    setVideos(videoData);
+  },
+  (error) => console.error('Videos listener error:', error)
+);
 
-    // Progress listener
-    const unsubProgress = onSnapshot(
-      collection(db, `coaches/${user.uid}/progress`),
-      (snapshot) => {
-        const progressData = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id,
-          exerciseId: String(doc.data().exerciseId),
-          athleteId: String(doc.data().athleteId),
-          workoutId: String(doc.data().workoutId),
-          scheduledWorkoutId: String(doc.data().scheduledWorkoutId),
-          date: doc.data().date || new Date().toISOString().split('T')[0],
-          timestamp: doc.data().timestamp || new Date().toISOString(),
-          completed: doc.data().completed || false,
-          category: doc.data().category || 'unknown',
-          setsCompleted: doc.data().setsCompleted || 0,
-          repsCompleted: doc.data().repsCompleted || 0,
-          targetSets: doc.data().targetSets,
-          targetReps: doc.data().targetReps
-        })) as ExerciseProgress[];
-        setProgress(progressData);
-      }
-    );
+// Progress listener
+const unsubProgress = onSnapshot(
+  collection(db, `coaches/${user.uid}/progress`),
+  (snapshot) => {
+    console.log('Progress snapshot received, docs:', snapshot.docs.length);
+    const progressData = snapshot.docs.map(doc => {
+      console.log('Processing progress doc:', doc.id, doc.data());
+      return {
+        ...doc.data(),
+        id: doc.id,
+        exerciseId: String(doc.data().exerciseId),
+        athleteId: String(doc.data().athleteId),
+        workoutId: String(doc.data().workoutId),
+        scheduledWorkoutId: String(doc.data().scheduledWorkoutId),
+        date: doc.data().date || new Date().toISOString().split('T')[0],
+        timestamp: doc.data().timestamp || new Date().toISOString(),
+        completed: doc.data().completed || false,
+        category: doc.data().category || 'unknown',
+        setsCompleted: doc.data().setsCompleted || 0,
+        repsCompleted: doc.data().repsCompleted || 0,
+        targetSets: doc.data().targetSets,
+        targetReps: doc.data().targetReps
+      };
+    }) as ExerciseProgress[];
+    console.log('Setting progress:', progressData);
+    setProgress(progressData);
+  },
+  (error) => console.error('Progress listener error:', error)
+);
 
     return () => {
       unsubExercises();
@@ -278,18 +329,20 @@ const unsubCategories = onSnapshot(
   };
 
   // Add category functions alongside other CRUD functions
-const addCategory = async (category: Omit<Category, 'id'>) => {
-  if (!user) throw new Error('Not authenticated');
-  try {
-    await addDoc(collection(db, `coaches/${user.uid}/categories`), {
-      ...category,
-      coachId: user.uid
-    });
-  } catch (error) {
-    console.error('Error adding category:', error);
-    throw error;
-  }
-};
+  const addCategory = async (category: Omit<Category, 'id'>) => {
+    if (!user) throw new Error('Not authenticated');
+    try {
+      console.log('Adding category:', category);
+      await addDoc(collection(db, `coaches/${user.uid}/categories`), {
+        ...category,
+        coachId: user.uid
+      });
+      console.log('Category added successfully');
+    } catch (error) {
+      console.error('Error adding category:', error);
+      throw error;
+    }
+  };
 
 const updateCategory = async (id: string, category: Omit<Category, 'id'>) => {
   if (!user) throw new Error('Not authenticated');
