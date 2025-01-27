@@ -70,10 +70,8 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ workoutId, onClose }) => 
 
   const getVideoUrls = (exerciseId: string) => {
     const exercise = exercises.find(e => e.id === exerciseId);
-    console.log('Getting videos for exercise:', exercise);
     
     if (!exercise || !exercise.videoIds || exercise.videoIds.length === 0) {
-      console.log('No videos found, returning placeholder');
       return [{
         id: '',
         url: 'null',
@@ -88,7 +86,6 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ workoutId, onClose }) => 
       .map(videoId => videos.find(video => video.id === videoId))
       .filter((video): video is Video => video !== undefined);
     
-    console.log('Found videos:', foundVideos);
     return foundVideos;
   };
 
@@ -101,7 +98,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ workoutId, onClose }) => 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
       <div className="bg-[#242526] rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-[#242526] border-b border-[#3A3B3C] p-4 flex justify-between items-center">
+        <div className="sticky top-0 bg-[#242526] border-b border-[#3A3B3C] p-4 flex justify-between items-center z-[60]">
           <h2 className="text-2xl font-bold text-white">{workout.name}</h2>
           <button 
             onClick={onClose}
@@ -133,7 +130,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ workoutId, onClose }) => 
                       if (!exercise) return null;
 
                       return (
-                        <div key={drillIndex} className="border border-[#3A3B3C] rounded-lg p-4 bg-[#18191A] hover:border-[#3A3B3C] transition-colors">
+                        <div key={drillIndex} className="border border-[#3A3B3C] rounded-lg p-4 bg-[#18191A] hover:border-[#3A3B3C] transition-colors min-h-[80px]">
                           <div className="flex justify-between items-start">
                             <h4 className="text-lg font-medium text-white">{exercise.name}</h4>
                             {(item.sets || drill.sets) && (item.reps || drill.reps) && (
@@ -153,15 +150,17 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ workoutId, onClose }) => 
                             exerciseName={exercise.name}
                           />
 
-                          <div className="mt-4">
-                            {getVideoUrls(exercise.id).map((video, videoIndex) => (
-                              <VideoPlayer
-                                key={videoIndex}
-                                url={video.url}
-                                title={`${exercise.name} Demo ${videoIndex + 1}`}
-                              />
-                            ))}
-                          </div>
+                          {getVideoUrls(exercise.id).some(video => video.url !== 'null') && (
+                            <div className="mt-4">
+                              {getVideoUrls(exercise.id).map((video, videoIndex) => (
+                                <VideoPlayer
+                                  key={videoIndex}
+                                  url={video.url}
+                                  title={`${exercise.name} Demo ${videoIndex + 1}`}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -174,7 +173,7 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ workoutId, onClose }) => 
                 if (!exercise) return null;
   
                 return (
-                  <div key={index} className="border border-[#3A3B3C] rounded-lg p-4 bg-[#18191A] hover:border-[#3A3B3C] transition-colors">
+                  <div key={index} className="border border-[#3A3B3C] rounded-lg p-4 bg-[#18191A] hover:border-[#3A3B3C] transition-colors min-h-[80px]">
                     <div className="flex justify-between items-start">
                       <h3 className="text-lg font-medium text-white">{exercise.name}</h3>
                       {item.sets && item.reps && (
@@ -194,15 +193,17 @@ const WorkoutDetail: React.FC<WorkoutDetailProps> = ({ workoutId, onClose }) => 
                       exerciseName={exercise.name}
                     />
   
-                    <div className="mt-4">
-                      {getVideoUrls(exercise.id).map((video, videoIndex) => (
-                        <VideoPlayer
-                          key={videoIndex}
-                          url={video.url}
-                          title={`${exercise.name} Demo ${videoIndex + 1}`}
-                        />
-                      ))}
-                    </div>
+                    {getVideoUrls(exercise.id).some(video => video.url !== 'null') && (
+                      <div className="mt-4">
+                        {getVideoUrls(exercise.id).map((video, videoIndex) => (
+                          <VideoPlayer
+                            key={videoIndex}
+                            url={video.url}
+                            title={`${exercise.name} Demo ${videoIndex + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               }
