@@ -92,19 +92,12 @@ export interface ExerciseProgress {
   coachId: string;
 }
 
-export interface Invitation {
-  id: string;
-  coachId: string;
-  email: string;
-  status: 'pending' | 'accepted' | 'declined';
-  createdAt: string;
-  expiresAt: string;
-}
-
 export interface CoachProfile {
   id: string;
-  athletes: string[];  // athlete UIDs
-  invites: string[];   // invitation IDs
+  invitationCount: number;  // Track number of pending invitations
+  maxInvitations: number;   // Default to 5
+  athletes: string[];       // athlete UIDs
+  invites: string[];       // invitation IDs
 }
 
 export interface AthleteProfile {
@@ -119,3 +112,21 @@ export interface Category {
   coachId: string;
   isDefault?: boolean;
 }
+
+export interface Invitation {
+  id: string;
+  coachId: string;
+  email: string;
+  status: InvitationStatus;
+  createdAt: string;
+  expiresAt: string;
+  message?: string;
+}
+
+export interface PendingInvitation {
+  email: string;
+  message?: string;
+}
+
+export type InvitationStatus = 'pending' | 'accepted' | 'declined' | 'expired';
+

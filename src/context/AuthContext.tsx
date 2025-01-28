@@ -39,6 +39,7 @@ interface AuthContextType {
   setActiveCoachId: (coachId: string) => Promise<void>;
   viewMode: 'coach' | 'athlete';
   toggleViewMode: () => Promise<void>;
+  createAthleteProfile: (coachId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -138,6 +139,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+      // Add function in AuthProvider
+      const createAthleteProfile = async (coachId: string) => {
+        if (!user) throw new Error('Not authenticated');
+        
+        await setDoc(doc(db, 'users', user.uid), {
+          role: 'athlete',
+          coachId: coachId
+        }, { merge: true });
+        
+        await setDoc(doc(db, `coaches/${coachId}/athletes/${user.uid}`), {
+          name: user.displayName || user.email,
+          email: user.email,
+          joinedAt: new Date().toISOString()
+        });
+      };
+
       // Update toggleViewMode function
   const toggleViewMode = async () => {
   const newMode = viewMode === 'coach' ? 'athlete' : 'coach'
@@ -228,6 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setActiveCoachId,
         viewMode,
         toggleViewMode,
+        createAthleteProfile,
       }}
     >
       {!loading && children}
