@@ -12,8 +12,12 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  ActionCodeSettings,
+  UserCredential
 } from 'firebase/auth';
-import { auth, db } from '@/firebase/config';
+import { auth, db, actionCodeSettings } from '@/firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
@@ -46,6 +50,9 @@ interface AuthContextType {
   createAthleteProfile: (coachId: string) => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
   isEmailVerified: () => boolean;
+  signInWithLink: (email: string) => Promise<void>;
+  completeSignInWithLink: (email: string) => Promise<UserCredential>;
+  isEmailLink: (link: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -226,6 +233,43 @@ const fetchAndUpdateProfile = async (uid: string, emailVerified: boolean) => {
     }
   };
 
+  const signInWithLink = async (email: string) => {
+    if (!user) throw new Error('No user signed in');
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('emailForSignIn', email);
+      }
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    } catch (error: any) {
+      console.error('Error sending sign-in link:', error);
+      throw error;
+    }
+  };
+  
+  const completeSignInWithLink = async (email: string) => {
+    try {
+      if (!email) {
+        email = window.localStorage.getItem('emailForSignIn') || '';
+      }
+      
+      if (!email) {
+        throw new Error('Email not found. Please provide your email to complete sign-in.');
+      }
+  
+      const result = await signInWithEmailLink(auth, email, window.location.href);
+      window.localStorage.removeItem('emailForSignIn');
+      
+      return result;
+    } catch (error: any) {
+      console.error('Error completing sign-in:', error);
+      throw error;
+    }
+  };
+  
+  const isEmailLink = (link: string): boolean => {
+    return isSignInWithEmailLink(auth, link);
+  };
+  
   const updateUserEmail = async (newEmail: string) => {
     if (!user) throw new Error('No user signed in');
     try {
@@ -324,7 +368,10 @@ const fetchAndUpdateProfile = async (uid: string, emailVerified: boolean) => {
         toggleViewMode,
         createAthleteProfile,
         sendVerificationEmail,
-        isEmailVerified
+        isEmailVerified,
+        signInWithLink,
+        completeSignInWithLink,
+        isEmailLink,
       }}
     >
       {!loading && children}

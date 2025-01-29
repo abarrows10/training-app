@@ -45,6 +45,20 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
+export const actionCodeSettings = {
+  url: `${process.env.NEXT_PUBLIC_BASE_URL}/finalize-signup`,
+  handleCodeInApp: true,
+  iOS: {
+    bundleId: 'com.example.ios'
+  },
+  android: {
+    packageName: 'com.example.android',
+    installApp: true,
+    minimumVersion: '12'
+  },
+  dynamicLinkDomain: process.env.NEXT_PUBLIC_DYNAMIC_LINK_DOMAIN
+};
+
 console.log('Initializing Firebase with config:', firebaseConfig);
 
 let app: FirebaseApp;
