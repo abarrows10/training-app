@@ -57,6 +57,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [verificationEmailSent, setVerificationEmailSent] = useState(false);
   const router = useRouter();
+  // Add after the router declaration
+const fetchAndUpdateProfile = async (uid: string, emailVerified: boolean) => {
+  const userDoc = await getDoc(doc(db, 'users', uid));
+  
+  if (userDoc.exists()) {
+    const userProfile = userDoc.data() as UserProfile;
+    
+    // Update Firestore if verification status changed
+    if (userProfile.emailVerified !== emailVerified) {
+      await setDoc(doc(db, 'users', uid), {
+        ...userProfile,
+        emailVerified
+      }, { merge: true });
+      
+      userProfile.emailVerified = emailVerified;
+    }
+    
+    setProfile(userProfile);
+    setIsAdmin(!!userProfile.isAdmin);
+    return userProfile;
+  }
+  return null;
+};
   const [viewMode, setViewMode] = useState<'coach' | 'athlete'>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('viewMode') as 'coach' | 'athlete' || 'coach';
@@ -66,58 +89,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('Auth state changed:', user?.email);
       if (user) {
         try {
-          console.log('Fetching user doc for:', user.uid);
-          console.log('Auth state changed - User:', {
+          // Force refresh
+          await user.reload();
+          const idTokenResult = await user.getIdTokenResult(true);
+          
+          console.log('User status:', {
             email: user.email,
             emailVerified: user.emailVerified,
-            metadata: user.metadata
+            token: idTokenResult
           });
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            const userProfile = userDoc.data() as UserProfile;
-            console.log('User profile found:', userProfile);
-            
-            // Update email verified status if needed
-            if (userProfile.emailVerified !== user.emailVerified) {
-              await setDoc(doc(db, 'users', user.uid), {
-                ...userProfile,
-                emailVerified: user.emailVerified
-              }, { merge: true });
-              userProfile.emailVerified = user.emailVerified;
+          
+          const userProfile = await fetchAndUpdateProfile(user.uid, user.emailVerified);
+          
+          if (user.emailVerified) {
+            // Post-verification routing
+            if (userProfile?.role === 'coach' || userProfile?.role === 'super_admin') {
+              router.push('/coach/exercises');
+            } else if (userProfile?.role === 'athlete') {
+              router.push('/athlete/workouts');
             }
-            
-            setProfile(userProfile);
-            setIsAdmin(!!userProfile.isAdmin);
-            
-            // Redirect unverified non-admin users
-            if (!user.emailVerified && !userProfile.isAdmin) {
-              const allowedPaths = ['/login', '/verify-email'];
-              if (!allowedPaths.includes(window.location.pathname)) {
-                router.push('/verify-email');
-                return;
-              }
+          } else if (!user.emailVerified && !userProfile?.isAdmin) {
+            const allowedPaths = ['/login', '/verify-email'];
+            if (!allowedPaths.includes(window.location.pathname)) {
+              router.push('/verify-email');
             }
-          } else {
-            console.log('No user document exists');
-            router.push('/login');
           }
         } catch (error) {
-          console.error('Error fetching user profile:', error);
+          console.error('Error handling auth state:', error);
           router.push('/login');
         }
       } else {
-        console.log('No user authenticated - redirecting to login');
         setProfile(null);
         setIsAdmin(false);
-        router.push('/login');
       }
+      
       setUser(user);
       setLoading(false);
     });
- 
+  
     return () => unsubscribe();
   }, [router]);
 

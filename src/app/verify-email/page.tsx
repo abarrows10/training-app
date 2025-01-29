@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, RefreshCw } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 
 export default function VerifyEmailPage() {
   const { user, profile, verificationEmailSent, sendVerificationEmail, isEmailVerified } = useAuth();
@@ -58,25 +60,35 @@ export default function VerifyEmailPage() {
     }
   };
 
-  const handleRefreshStatus = async () => {
+  // Update handleRefreshStatus function
+const handleRefreshStatus = async () => {
     if (!user) return;
     
     try {
       await user.reload();
-      console.log('User reloaded:', {
-        email: user.email,
-        emailVerified: user.emailVerified
-      });
+      const idTokenResult = await user.getIdTokenResult(true);
       
+      console.log('Refresh status:', {
+        email: user.email,
+        emailVerified: user.emailVerified,
+        token: idTokenResult
+      });
+  
       if (user.emailVerified) {
-        if (profile?.role === 'coach' || profile?.role === 'super_admin') {
-          router.push('/coach/exercises');
-        } else {
-          router.push('/athlete/workouts');
+        // Force profile refresh
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userProfile = userDoc.data();
+          if (userProfile.role === 'coach' || userProfile.role === 'super_admin') {
+            router.push('/coach/exercises');
+          } else {
+            router.push('/athlete/workouts');
+          }
         }
       }
     } catch (error) {
       console.error('Error refreshing status:', error);
+      setError('Failed to verify email status. Please try again.');
     }
   };
 
