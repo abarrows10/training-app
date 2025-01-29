@@ -1,12 +1,15 @@
-import { AuthProvider } from '@/context/AuthContext'
-import { StoreProvider } from '@/store'
-import '../global.css'
+'use client';
+
+import { type ReactNode } from 'react';
+import { AuthProvider } from '@/context/AuthContext';
+import { StoreProvider } from '@/store';
+import '../global.css';
 
 export default function InviteLayout({
   children,
 }: {
-  children: React.ReactNode
-}) {
+  children: ReactNode;
+}): React.JSX.Element {
   return (
     <html lang="en">
       <body suppressHydrationWarning={true}>
@@ -17,5 +20,5 @@ export default function InviteLayout({
         </AuthProvider>
       </body>
     </html>
-  )
+  );
 }

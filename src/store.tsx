@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { 
   collection, 
   doc, 
@@ -13,8 +13,9 @@ import {
   setDoc,
   where
 } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { db, auth } from '@/firebase/config';
 import { useAuth } from '@/context/AuthContext';
+import { sendSignInLinkToEmail } from 'firebase/auth';
 import { 
   Exercise, 
   DrillSequence, 
@@ -91,7 +92,7 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | null>(null);
 
-export function StoreProvider({ children }: { children: React.ReactNode }) {
+export function StoreProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const { user, profile } = useAuth();
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -683,27 +684,27 @@ const removeSequence = async (id: string) => {
   };
 
   // Invitation functions
-  const getInvitationCount = () => {
+  const getInvitationCount = (): number => {
     return invitations.filter(inv => inv.status === 'pending').length;
   };
 
-  const getUserInvitation = (email: string) => {
+  const getUserInvitation = (searchEmail: string): Invitation | undefined => {
     return invitations.find(inv => 
-      inv.email.toLowerCase() === email.toLowerCase() && 
+      inv.email.toLowerCase() === searchEmail.toLowerCase() && 
       inv.status === 'pending'
     );
   };
 
-  const checkInvitationLimits = () => {
+  const checkInvitationLimits = (): { canInvite: boolean; remainingInvites: number } => {
     const pendingCount = getInvitationCount();
-    const maxInvites = 5; // Current limit
+    const maxInvites = 5;
     return {
       canInvite: pendingCount < maxInvites,
       remainingInvites: maxInvites - pendingCount
     };
   };
 
-  const sendInvitation = async (email: string, message?: string) => {
+  const sendInvitation = async (emailToInvite: string, inviteMessage?: string): Promise<void> => {
     if (!user?.uid) throw new Error('Not authenticated');
     
     const limits = checkInvitationLimits();
@@ -711,47 +712,74 @@ const removeSequence = async (id: string) => {
       throw new Error(`Invitation limit reached. Maximum ${5} pending invitations allowed.`);
     }
 
-    const existingInvite = getUserInvitation(email);
+    const existingInvite = getUserInvitation(emailToInvite);
     if (existingInvite) {
       throw new Error('An invitation is already pending for this email.');
     }
 
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + 7);
+    try {
+      // Create invitation document first
+      const docRef = await addDoc(collection(db, `coaches/${user.uid}/invitations`), {
+        coachId: user.uid,
+        email: emailToInvite.toLowerCase(),
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        message: inviteMessage || null
+      });
 
-    const invitation: Omit<Invitation, 'id'> = {
-      coachId: user.uid,
-      email: email.toLowerCase(),
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      expiresAt: expirationDate.toISOString(),
-      message
-    };
+      // Generate action code settings
+      const actionCodeSettings = {
+        url: `${window.location.origin}/invite/${docRef.id}`,
+        handleCodeInApp: true
+      };
 
-    await addDoc(collection(db, `coaches/${user.uid}/invitations`), invitation);
+      // Send the email
+      await sendSignInLinkToEmail(auth, emailToInvite, actionCodeSettings);
+      
+      // Store email in localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('emailForSignIn', emailToInvite);
+      }
+    } catch (error: any) {
+      console.error('Error sending invitation:', error);
+      throw new Error(error.message);
+    }
   };
 
-  const cancelInvitation = async (invitationId: string) => {
+  const cancelInvitation = async (invitationId: string): Promise<void> => {
     if (!user?.uid) throw new Error('Not authenticated');
     await deleteDoc(doc(db, `coaches/${user.uid}/invitations`, invitationId));
   };
-
-  const acceptInvitation = async (invitationId: string) => {
-    if (!user?.uid) throw new Error('Not authenticated');
-    const docRef = doc(db, `coaches/${user.uid}/invitations/${invitationId}`);
-    await updateDoc(docRef, {
-      status: 'accepted',
-      respondedAt: new Date().toISOString()
-    });
-  };
   
-  const declineInvitation = async (invitationId: string) => {
+  const acceptInvitation = async (invitationId: string): Promise<void> => {
     if (!user?.uid) throw new Error('Not authenticated');
-    const docRef = doc(db, `coaches/${user.uid}/invitations/${invitationId}`);
-    await updateDoc(docRef, {
-      status: 'declined',
-      respondedAt: new Date().toISOString()
-    });
+    
+    try {
+      const inviteRef = doc(db, `coaches/${user.uid}/invitations`, invitationId);
+      await updateDoc(inviteRef, {
+        status: 'accepted',
+        respondedAt: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('Error accepting invitation:', error);
+      throw new Error(error.message);
+    }
+  };
+
+  const declineInvitation = async (invitationId: string): Promise<void> => {
+    if (!user?.uid) throw new Error('Not authenticated');
+    
+    try {
+      const inviteRef = doc(db, `coaches/${user.uid}/invitations`, invitationId);
+      await updateDoc(inviteRef, {
+        status: 'declined',
+        respondedAt: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('Error declining invitation:', error);
+      throw new Error(error.message);
+    }
   };
 
   return (
