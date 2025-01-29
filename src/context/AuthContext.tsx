@@ -9,7 +9,9 @@ import {
   onAuthStateChanged,
   updateEmail,
   updatePassword,
+  sendEmailVerification,
   sendPasswordResetEmail,
+  sendSignInLinkToEmail,
 } from 'firebase/auth';
 import { auth, db } from '@/firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -23,12 +25,14 @@ interface UserProfile {
   isAdmin?: boolean;
   coachId?: string;
   activeCoachId?: string;
+  emailVerified?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
+  verificationEmailSent: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, role: UserRole) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -40,6 +44,8 @@ interface AuthContextType {
   viewMode: 'coach' | 'athlete';
   toggleViewMode: () => Promise<void>;
   createAthleteProfile: (coachId: string) => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
+  isEmailVerified: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -49,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [verificationEmailSent, setVerificationEmailSent] = useState(false);
   const router = useRouter();
   const [viewMode, setViewMode] = useState<'coach' | 'athlete'>(() => {
     if (typeof window !== 'undefined') {
@@ -67,8 +74,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (userDoc.exists()) {
             const userProfile = userDoc.data() as UserProfile;
             console.log('User profile found:', userProfile);
+            
+            // Update email verified status if needed
+            if (userProfile.emailVerified !== user.emailVerified) {
+              await setDoc(doc(db, 'users', user.uid), {
+                ...userProfile,
+                emailVerified: user.emailVerified
+              }, { merge: true });
+              userProfile.emailVerified = user.emailVerified;
+            }
+            
             setProfile(userProfile);
             setIsAdmin(!!userProfile.isAdmin);
+            
+            // Redirect unverified non-admin users
+            if (!user.emailVerified && !userProfile.isAdmin) {
+              const allowedPaths = ['/login', '/verify-email'];
+              if (!allowedPaths.includes(window.location.pathname)) {
+                router.push('/verify-email');
+                return;
+              }
+            }
           } else {
             console.log('No user document exists');
             router.push('/login');
@@ -95,6 +121,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Starting sign in...');
       const result = await signInWithEmailAndPassword(auth, email, password);
       console.log('Sign in successful:', result);
+      
+      // Check email verification for non-admin users
+      if (!result.user.emailVerified && !isAdmin) {
+        if (!verificationEmailSent) {
+          await sendEmailVerification(result.user);
+          setVerificationEmailSent(true);
+        }
+        router.push('/verify-email');
+        return;
+      }
+      
       const token = await result.user.getIdToken();
       console.log('Token generated:', token);
       document.cookie = `authToken=${token}; path=/;`;
@@ -109,10 +146,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
+      // Send verification email
+      await sendEmailVerification(result.user);
+      setVerificationEmailSent(true);
+      
       const userProfile: UserProfile = {
         email,
         role,
-        isAdmin: false
+        isAdmin: false,
+        emailVerified: false
       };
 
       await setDoc(doc(db, 'users', result.user.uid), userProfile);
@@ -133,46 +175,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const token = await result.user.getIdToken();
       document.cookie = `authToken=${token}; path=/;`;
+      
+      router.push('/verify-email');
     } catch (error: any) {
       console.error('Sign up error:', error);
       throw error;
     }
   };
 
-      // Add function in AuthProvider
-      const createAthleteProfile = async (coachId: string) => {
-        if (!user) throw new Error('Not authenticated');
-        
-        await setDoc(doc(db, 'users', user.uid), {
-          role: 'athlete',
-          coachId: coachId
-        }, { merge: true });
-        
-        await setDoc(doc(db, `coaches/${coachId}/athletes/${user.uid}`), {
-          name: user.displayName || user.email,
-          email: user.email,
-          joinedAt: new Date().toISOString()
-        });
-      };
+  const sendVerificationEmail = async () => {
+    if (!user) throw new Error('Not authenticated');
+    try {
+      await sendEmailVerification(user);
+      setVerificationEmailSent(true);
+    } catch (error: any) {
+      console.error('Error sending verification email:', error);
+      throw error;
+    }
+  };
 
-      // Update toggleViewMode function
-  const toggleViewMode = async () => {
-  const newMode = viewMode === 'coach' ? 'athlete' : 'coach'
-  setViewMode(newMode)
-  
-  // Update both localStorage and cookie
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('viewMode', newMode)
-    document.cookie = `viewMode=${newMode}; path=/;`
-  }
-  
-  // Redirect based on new mode
-  if (newMode === 'athlete') {
-    router.push('/athlete/workouts')
-  } else {
-    router.push('/coach/exercises')
-  }
-}
+  const isEmailVerified = () => {
+    return user?.emailVerified || false;
+  };
 
   const resetPassword = async (email: string) => {
     try {
@@ -192,6 +216,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await updateEmail(user, newEmail);
       await setDoc(doc(db, 'users', user.uid), { email: newEmail }, { merge: true });
       
+      // Reset verification status for new email
+      if (user.emailVerified) {
+        await sendEmailVerification(user);
+        setVerificationEmailSent(true);
+      }
     } catch (error: any) {
       console.error('Email update error:', error);
       throw error;
@@ -205,6 +234,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       console.error('Password update error:', error);
       throw error;
+    }
+  };
+
+  const createAthleteProfile = async (coachId: string) => {
+    if (!user) throw new Error('Not authenticated');
+    
+    await setDoc(doc(db, 'users', user.uid), {
+      role: 'athlete',
+      coachId: coachId
+    }, { merge: true });
+    
+    await setDoc(doc(db, `coaches/${coachId}/athletes/${user.uid}`), {
+      name: user.displayName || user.email,
+      email: user.email,
+      joinedAt: new Date().toISOString()
+    });
+  };
+
+  const toggleViewMode = async () => {
+    const newMode = viewMode === 'coach' ? 'athlete' : 'coach';
+    setViewMode(newMode);
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('viewMode', newMode);
+      document.cookie = `viewMode=${newMode}; path=/;`;
+    }
+    
+    if (newMode === 'athlete') {
+      router.push('/athlete/workouts');
+    } else {
+      router.push('/coach/exercises');
     }
   };
 
@@ -234,7 +294,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{ 
         user, 
         profile,
-        loading, 
+        loading,
+        verificationEmailSent,
         signIn, 
         signUp,
         resetPassword,
@@ -246,6 +307,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         viewMode,
         toggleViewMode,
         createAthleteProfile,
+        sendVerificationEmail,
+        isEmailVerified
       }}
     >
       {!loading && children}
