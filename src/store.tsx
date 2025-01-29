@@ -13,7 +13,7 @@ import {
   setDoc,
   where
 } from 'firebase/firestore';
-import { db, auth } from '@/firebase/config';
+import { db, auth, actionCodeSettings } from '@/firebase/config';
 import { useAuth } from '@/context/AuthContext';
 import { sendSignInLinkToEmail } from 'firebase/auth';
 import { 
@@ -728,12 +728,12 @@ const removeSequence = async (id: string) => {
         message: inviteMessage || null
       });
 
-      // Generate action code settings
-      const actionCodeSettings = {
-        url: `${window.location.origin}/invite/${docRef.id}`,
-        handleCodeInApp: true
+       // Use actionCodeSettings from config
+       const emailLink = {
+        ...actionCodeSettings,
+        url: `http://localhost:3000/finalize-signup?inviteId=${docRef.id}`
       };
-
+      
       // Send the email
       await sendSignInLinkToEmail(auth, emailToInvite, actionCodeSettings);
       

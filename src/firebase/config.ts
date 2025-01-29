@@ -46,7 +46,7 @@ const firebaseConfig = {
 };
 
 export const actionCodeSettings = {
-  url: `${process.env.NEXT_PUBLIC_BASE_URL}/finalize-signup`,
+  url: 'http://localhost:3000/finalize-signup',
   handleCodeInApp: true,
   iOS: {
     bundleId: 'com.example.ios'
