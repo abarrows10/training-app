@@ -711,14 +711,13 @@ const removeSequence = async (id: string) => {
     if (!limits.canInvite) {
       throw new Error(`Invitation limit reached. Maximum ${5} pending invitations allowed.`);
     }
-
+  
     const existingInvite = getUserInvitation(emailToInvite);
     if (existingInvite) {
       throw new Error('An invitation is already pending for this email.');
     }
-
+  
     try {
-      // Create invitation document first
       const docRef = await addDoc(collection(db, `coaches/${user.uid}/invitations`), {
         coachId: user.uid,
         email: emailToInvite.toLowerCase(),
@@ -727,23 +726,23 @@ const removeSequence = async (id: string) => {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         message: inviteMessage || null
       });
-
-       // Use actionCodeSettings from config
-       const emailLink = {
+  
+      // Create email link with invitation ID
+      const emailLink = {
         ...actionCodeSettings,
         url: `http://localhost:3000/finalize-signup?inviteId=${docRef.id}`
       };
+  
+      // Send email with link
+      await sendSignInLinkToEmail(auth, emailToInvite, emailLink);
       
-      // Send the email
-      await sendSignInLinkToEmail(auth, emailToInvite, actionCodeSettings);
-      
-      // Store email in localStorage
+      // Store email in localStorage for verification
       if (typeof window !== 'undefined') {
         localStorage.setItem('emailForSignIn', emailToInvite);
       }
     } catch (error: any) {
       console.error('Error sending invitation:', error);
-      throw new Error(error.message);
+      throw error;
     }
   };
 

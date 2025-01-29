@@ -47,16 +47,7 @@ const firebaseConfig = {
 
 export const actionCodeSettings = {
   url: 'http://localhost:3000/finalize-signup',
-  handleCodeInApp: true,
-  iOS: {
-    bundleId: 'com.example.ios'
-  },
-  android: {
-    packageName: 'com.example.android',
-    installApp: true,
-    minimumVersion: '12'
-  },
-  dynamicLinkDomain: process.env.NEXT_PUBLIC_DYNAMIC_LINK_DOMAIN
+  handleCodeInApp: true
 };
 
 console.log('Initializing Firebase with config:', firebaseConfig);
