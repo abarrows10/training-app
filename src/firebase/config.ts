@@ -46,7 +46,7 @@ const firebaseConfig = {
 };
 
 export const actionCodeSettings = {
-  url: 'http://localhost:3000/finalize-signup',
+  url: process.env.NEXT_PUBLIC_BASE_URL + '/finalize-signup',
   handleCodeInApp: true
 };
 

@@ -730,7 +730,7 @@ const removeSequence = async (id: string) => {
       // Create email link with invitation ID
       const emailLink = {
         ...actionCodeSettings,
-        url: `http://localhost:3000/finalize-signup?inviteId=${docRef.id}`
+        url: `${process.env.NEXT_PUBLIC_BASE_URL}/finalize-signup?inviteId=${docRef.id}`
       };
   
       // Send email with link
