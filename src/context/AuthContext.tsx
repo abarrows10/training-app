@@ -70,6 +70,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         try {
           console.log('Fetching user doc for:', user.uid);
+          console.log('Auth state changed - User:', {
+            email: user.email,
+            emailVerified: user.emailVerified,
+            metadata: user.metadata
+          });
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const userProfile = userDoc.data() as UserProfile;

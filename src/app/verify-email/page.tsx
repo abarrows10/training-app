@@ -58,20 +58,29 @@ export default function VerifyEmailPage() {
     }
   };
 
-  const handleRefreshStatus = () => {
-    if (user) {
-      user.reload().then(() => {
-        if (user.emailVerified) {
-          // Redirect based on user role after verification
-          if (profile?.role === 'coach' || profile?.role === 'super_admin') {
-            router.push('/coach/exercises');
-          } else {
-            router.push('/athlete/workouts');
-          }
-        }
+  const handleRefreshStatus = async () => {
+    if (!user) return;
+    
+    try {
+      await user.reload();
+      console.log('User reloaded:', {
+        email: user.email,
+        emailVerified: user.emailVerified
       });
+      
+      if (user.emailVerified) {
+        if (profile?.role === 'coach' || profile?.role === 'super_admin') {
+          router.push('/coach/exercises');
+        } else {
+          router.push('/athlete/workouts');
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing status:', error);
     }
   };
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#18191A]">
