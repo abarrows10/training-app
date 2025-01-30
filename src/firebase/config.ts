@@ -47,19 +47,18 @@ const firebaseConfig = {
 
 // In firebase/config.ts
 export const actionCodeSettings = {
-  url: process.env.NODE_ENV === 'production'
-    ? `${process.env.NEXT_PUBLIC_BASE_URL}/finalize-signup`
-    : `http://localhost:3000/finalize-signup`,
+  url: 'http://localhost:3000/finalize-signup',  // Hardcode for now
   handleCodeInApp: true
 };
 
 export const getActionCodeSettings = (inviteId?: string) => {
-  const settings = {
+  const baseUrl = actionCodeSettings.url;
+  const finalUrl = `${baseUrl}${inviteId ? `?inviteId=${inviteId}` : ''}`;
+  console.log('Generated URL:', finalUrl);
+  return {
     ...actionCodeSettings,
-    url: `${actionCodeSettings.url}${inviteId ? `?inviteId=${inviteId}` : ''}`
+    url: finalUrl
   };
-  console.log('Generated URL:', settings.url);
-  return settings;
 };
 
 console.log('Initializing Firebase with config:', firebaseConfig);
