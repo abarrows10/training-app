@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import ViewToggle from '@/components/ui/ViewToggle';
+import VerificationBanner from '@/components/ui/VerificationBanner';
 
 export default function AthleteLayout({
   children,
@@ -100,6 +101,7 @@ export default function AthleteLayout({
         </div>
       </nav>
 
+      <VerificationBanner />
       <main className="flex-1 p-4 xl:p-8 mt-12 xl:mt-0">
         {children}
       </main>

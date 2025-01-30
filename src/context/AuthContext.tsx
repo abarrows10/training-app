@@ -18,7 +18,7 @@ import {
   UserCredential
 } from 'firebase/auth';
 import { auth, db, getActionCodeSettings } from '@/firebase/config';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc,updateDoc, collection } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 type UserRole = 'super_admin' | 'coach' | 'athlete';
@@ -36,9 +36,8 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
-  verificationEmailSent: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, role: UserRole) => Promise<void>;
+  signUp: (email: string, password: string, role: UserRole, inviteId?: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserEmail: (newEmail: string) => Promise<void>;
   updateUserPassword: (newPassword: string) => Promise<void>;
@@ -49,10 +48,7 @@ interface AuthContextType {
   toggleViewMode: () => Promise<void>;
   createAthleteProfile: (coachId: string) => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
-  isEmailVerified: () => boolean;
-  signInWithLink: (email: string) => Promise<void>;
-  completeSignInWithLink: (email: string) => Promise<UserCredential>;
-  isEmailLink: (link: string) => boolean;
+  checkEmailVerification: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -98,80 +94,50 @@ const fetchAndUpdateProfile = async (uid: string, emailVerified: boolean) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // Force refresh
-          await user.reload();
-          const idTokenResult = await user.getIdTokenResult(true);
-          
-          console.log('User status:', {
-            email: user.email,
-            emailVerified: user.emailVerified,
-            token: idTokenResult
-          });
-          
-          const userProfile = await fetchAndUpdateProfile(user.uid, user.emailVerified);
-          
-          if (user.emailVerified) {
-            // Post-verification routing
-            if (userProfile?.role === 'coach' || userProfile?.role === 'super_admin') {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userProfile = userDoc.data() as UserProfile;
+            setProfile(userProfile);
+            setIsAdmin(!!userProfile.isAdmin);
+
+            // Route based on user role
+            if (userProfile.role === 'coach' || userProfile.role === 'super_admin') {
               router.push('/coach/exercises');
-            } else if (userProfile?.role === 'athlete') {
+            } else {
               router.push('/athlete/workouts');
-            }
-          } else if (!user.emailVerified && !userProfile?.isAdmin) {
-            const allowedPaths = ['/login', '/verify-email'];
-            if (!allowedPaths.includes(window.location.pathname)) {
-              router.push('/verify-email');
             }
           }
         } catch (error) {
-          console.error('Error handling auth state:', error);
+          console.error('Error fetching profile:', error);
           router.push('/login');
         }
       } else {
         setProfile(null);
         setIsAdmin(false);
+        router.push('/login');
       }
-      
       setUser(user);
       setLoading(false);
     });
-  
+
     return () => unsubscribe();
   }, [router]);
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('Starting sign in...');
       const result = await signInWithEmailAndPassword(auth, email, password);
-      console.log('Sign in successful:', result);
-      
-      // Check email verification for non-admin users
-      if (!result.user.emailVerified && !isAdmin) {
-        if (!verificationEmailSent) {
-          await sendEmailVerification(result.user);
-          setVerificationEmailSent(true);
-        }
-        router.push('/verify-email');
-        return;
-      }
-      
       const token = await result.user.getIdToken();
-      console.log('Token generated:', token);
       document.cookie = `authToken=${token}; path=/;`;
-      console.log('Cookie set');
     } catch (error: any) {
       console.error('Sign in error:', error);
       throw error;
     }
   };
 
-  const signUp = async (email: string, password: string, role: UserRole) => {
+  const signUp = async (email: string, password: string, role: UserRole, inviteId?: string) => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Send verification email
       await sendEmailVerification(result.user);
-      setVerificationEmailSent(true);
       
       const userProfile: UserProfile = {
         email,
@@ -196,103 +162,23 @@ const fetchAndUpdateProfile = async (uid: string, emailVerified: boolean) => {
         });
       }
 
+      // Handle invitation if present
+      if (inviteId) {
+        const inviteDoc = await getDoc(doc(db, 'coaches/invitations', inviteId));
+        if (inviteDoc.exists()) {
+          const invite = inviteDoc.data();
+          await createAthleteProfile(invite.coachId);
+          await updateDoc(doc(db, 'coaches/invitations', inviteId), {
+            status: 'accepted',
+            acceptedAt: new Date().toISOString()
+          });
+        }
+      }
+
       const token = await result.user.getIdToken();
       document.cookie = `authToken=${token}; path=/;`;
-      
-      router.push('/verify-email');
     } catch (error: any) {
       console.error('Sign up error:', error);
-      throw error;
-    }
-  };
-
-  const sendVerificationEmail = async () => {
-    if (!user) throw new Error('Not authenticated');
-    try {
-      await sendEmailVerification(user);
-      setVerificationEmailSent(true);
-    } catch (error: any) {
-      console.error('Error sending verification email:', error);
-      throw error;
-    }
-  };
-
-  const isEmailVerified = () => {
-    return user?.emailVerified || false;
-  };
-
-  const resetPassword = async (email: string) => {
-    try {
-      await sendPasswordResetEmail(auth, email, {
-        url: `${window.location.origin}/login`,
-        handleCodeInApp: true
-      });
-    } catch (error: any) {
-      console.error('Password reset error:', error);
-      throw error;
-    }
-  };
-
-  const signInWithLink = async (email: string) => {
-    if (!user) throw new Error('No user signed in');
-    try {
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('emailForSignIn', email);
-      }
-      await sendSignInLinkToEmail(auth, email, getActionCodeSettings());
-    } catch (error: any) {
-      console.error('Error sending sign-in link:', error);
-      throw error;
-    }
-  };
-  
-  const completeSignInWithLink = async (email: string) => {
-    try {
-      if (!email) {
-        email = window.localStorage.getItem('emailForSignIn') || '';
-      }
-      
-      if (!email) {
-        throw new Error('Email not found. Please provide your email to complete sign-in.');
-      }
-  
-      const result = await signInWithEmailLink(auth, email, window.location.href);
-      window.localStorage.removeItem('emailForSignIn');
-      
-      return result;
-    } catch (error: any) {
-      console.error('Error completing sign-in:', error);
-      throw error;
-    }
-  };
-  
-  const isEmailLink = (link: string): boolean => {
-    return isSignInWithEmailLink(auth, link);
-  };
-  
-  const updateUserEmail = async (newEmail: string) => {
-    if (!user) throw new Error('No user signed in');
-    try {
-      await updateEmail(user, newEmail);
-      await setDoc(doc(db, 'users', user.uid), { email: newEmail }, { merge: true });
-      
-      // Reset verification status for new email
-      if (user.emailVerified) {
-        await sendEmailVerification(user);
-        setVerificationEmailSent(true);
-      }
-    } catch (error: any) {
-      console.error('Email update error:', error);
-      throw error;
-    }
-  };
-
-  const updateUserPassword = async (newPassword: string) => {
-    if (!user) throw new Error('No user signed in');
-    try {
-      await updatePassword(user, newPassword);
-    } catch (error: any) {
-      console.error('Password update error:', error);
       throw error;
     }
   };
@@ -328,6 +214,42 @@ const fetchAndUpdateProfile = async (uid: string, emailVerified: boolean) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email, {
+        url: `${window.location.origin}/login`,
+        handleCodeInApp: true
+      });
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
+  };
+
+  const updateUserEmail = async (newEmail: string) => {
+    if (!user) throw new Error('No user signed in');
+    try {
+      await updateEmail(user, newEmail);
+      await setDoc(doc(db, 'users', user.uid), { email: newEmail }, { merge: true });
+      
+      // Send new verification email
+      await sendEmailVerification(user);
+    } catch (error: any) {
+      console.error('Email update error:', error);
+      throw error;
+    }
+  };
+
+  const updateUserPassword = async (newPassword: string) => {
+    if (!user) throw new Error('No user signed in');
+    try {
+      await updatePassword(user, newPassword);
+    } catch (error: any) {
+      console.error('Password update error:', error);
+      throw error;
+    }
+  };
+
   const setActiveCoachId = async (coachId: string) => {
     if (!user || !isAdmin) throw new Error('Unauthorized');
     try {
@@ -349,13 +271,34 @@ const fetchAndUpdateProfile = async (uid: string, emailVerified: boolean) => {
     }
   };
 
+  const sendVerificationEmail = async () => {
+    if (!user) throw new Error('No user signed in');
+    try {
+      await sendEmailVerification(user);
+    } catch (error) {
+      console.error('Error sending verification:', error);
+      throw error;
+    }
+  };
+
+  const checkEmailVerification = async () => {
+    if (!user) return;
+    try {
+      await user.reload();
+      if (user.emailVerified) {
+        await setDoc(doc(db, 'users', user.uid), { emailVerified: true }, { merge: true });
+      }
+    } catch (error) {
+      console.error('Error checking verification:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider 
       value={{ 
         user, 
         profile,
         loading,
-        verificationEmailSent,
         signIn, 
         signUp,
         resetPassword,
@@ -368,10 +311,7 @@ const fetchAndUpdateProfile = async (uid: string, emailVerified: boolean) => {
         toggleViewMode,
         createAthleteProfile,
         sendVerificationEmail,
-        isEmailVerified,
-        signInWithLink,
-        completeSignInWithLink,
-        isEmailLink,
+        checkEmailVerification
       }}
     >
       {!loading && children}

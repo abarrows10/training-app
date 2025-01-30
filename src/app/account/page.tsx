@@ -69,7 +69,16 @@ export default function AccountPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-gray-300 text-sm">Email</label>
-                <p className="text-white">{user?.email}</p>
+                <div className="flex items-center gap-3">
+                  <p className="text-white">{user?.email}</p>
+                  <span className={`text-sm px-2 py-0.5 rounded ${
+                    user?.emailVerified 
+                      ? 'bg-green-500/10 text-green-500' 
+                      : 'bg-yellow-500/10 text-yellow-500'
+                  }`}>
+                    {user?.emailVerified ? 'Verified' : 'Unverified'}
+                  </span>
+                </div>
               </div>
 
               <div>
