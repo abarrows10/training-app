@@ -727,11 +727,10 @@ const removeSequence = async (id: string) => {
         message: inviteMessage || null
       });
   
-      await sendSignInLinkToEmail(
-        auth, 
-        emailToInvite, 
-        getActionCodeSettings(docRef.id)
-      );
+      const inviteSettings = getActionCodeSettings(docRef.id);
+      console.log('Invitation settings:', inviteSettings);
+      
+      await sendSignInLinkToEmail(auth, emailToInvite, inviteSettings);
       
       if (typeof window !== 'undefined') {
         localStorage.setItem('emailForSignIn', emailToInvite);

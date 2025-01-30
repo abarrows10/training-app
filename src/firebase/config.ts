@@ -51,12 +51,16 @@ export const actionCodeSettings = {
     ? `${process.env.NEXT_PUBLIC_BASE_URL}/finalize-signup`
     : `http://localhost:3000/finalize-signup`,
   handleCodeInApp: true
- };
- 
- export const getActionCodeSettings = (inviteId?: string) => ({
-  ...actionCodeSettings,
-  url: `${actionCodeSettings.url}${inviteId ? `?inviteId=${inviteId}` : ''}`
- });
+};
+
+export const getActionCodeSettings = (inviteId?: string) => {
+  const settings = {
+    ...actionCodeSettings,
+    url: `${actionCodeSettings.url}${inviteId ? `?inviteId=${inviteId}` : ''}`
+  };
+  console.log('Generated URL:', settings.url);
+  return settings;
+};
 
 console.log('Initializing Firebase with config:', firebaseConfig);
 
