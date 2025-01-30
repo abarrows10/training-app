@@ -13,7 +13,7 @@ import {
   setDoc,
   where
 } from 'firebase/firestore';
-import { db, auth, actionCodeSettings } from '@/firebase/config';
+import { db, auth, actionCodeSettings, getActionCodeSettings } from '@/firebase/config';
 import { useAuth } from '@/context/AuthContext';
 import { sendSignInLinkToEmail } from 'firebase/auth';
 import { 
@@ -727,16 +727,12 @@ const removeSequence = async (id: string) => {
         message: inviteMessage || null
       });
   
-      // Create email link with invitation ID
-      const emailLink = {
-        ...actionCodeSettings,
-        url: `${process.env.NEXT_PUBLIC_BASE_URL}/finalize-signup?inviteId=${docRef.id}`
-      };
-  
-      // Send email with link
-      await sendSignInLinkToEmail(auth, emailToInvite, emailLink);
+      await sendSignInLinkToEmail(
+        auth, 
+        emailToInvite, 
+        getActionCodeSettings(docRef.id)
+      );
       
-      // Store email in localStorage for verification
       if (typeof window !== 'undefined') {
         localStorage.setItem('emailForSignIn', emailToInvite);
       }

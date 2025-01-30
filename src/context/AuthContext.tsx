@@ -17,7 +17,7 @@ import {
   ActionCodeSettings,
   UserCredential
 } from 'firebase/auth';
-import { auth, db, actionCodeSettings } from '@/firebase/config';
+import { auth, db, getActionCodeSettings } from '@/firebase/config';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
@@ -239,7 +239,7 @@ const fetchAndUpdateProfile = async (uid: string, emailVerified: boolean) => {
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('emailForSignIn', email);
       }
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      await sendSignInLinkToEmail(auth, email, getActionCodeSettings());
     } catch (error: any) {
       console.error('Error sending sign-in link:', error);
       throw error;

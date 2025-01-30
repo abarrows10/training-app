@@ -45,10 +45,18 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
+// In firebase/config.ts
 export const actionCodeSettings = {
-  url: process.env.NEXT_PUBLIC_BASE_URL + '/finalize-signup',
+  url: process.env.NODE_ENV === 'production'
+    ? `${process.env.NEXT_PUBLIC_BASE_URL}/finalize-signup`
+    : `http://localhost:3000/finalize-signup`,
   handleCodeInApp: true
-};
+ };
+ 
+ export const getActionCodeSettings = (inviteId?: string) => ({
+  ...actionCodeSettings,
+  url: `${actionCodeSettings.url}${inviteId ? `?inviteId=${inviteId}` : ''}`
+ });
 
 console.log('Initializing Firebase with config:', firebaseConfig);
 
